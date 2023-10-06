@@ -15,16 +15,16 @@ t0 = 0
 tN = 8
 
 
-def f(x, t):
+def f1(x, t):
     return -4 * x * np.sin(t)
 
 
-def true_solution(t):
+def true_solution1(t):
     return np.exp(4 * (np.cos(t) - 1))
 
 
 # Part (a)
-def forward_euler(t0, tN, x0, dt):
+def forward_euler(t0, tN, x0, dt, f):
     t = np.arange(t0, tN + dt / 2, dt)
     x = np.zeros_like(t)
     x[0] = x0
@@ -35,7 +35,7 @@ def forward_euler(t0, tN, x0, dt):
     return t, x
 
 
-def heun(t0, tN, x0, dt):
+def heun(t0, tN, x0, dt, f):
     t = np.arange(t0, tN + dt / 2, dt)
     x = np.zeros_like(t)
     x[0] = x0
@@ -48,7 +48,7 @@ def heun(t0, tN, x0, dt):
     return t, x
 
 
-def rk2(t0, tN, x0, dt):
+def rk2(t0, tN, x0, dt, f):
     t = np.arange(t0, tN + dt / 2, dt)
     x = np.zeros_like(t)
     x[0] = x0
@@ -60,18 +60,18 @@ def rk2(t0, tN, x0, dt):
     return t, x
 
 
-def do_numerical_method(method, t0, tN, x0, dt):
-    t, approx_solution = method(t0, tN, x0, dt)
+def do_numerical_method(method, t0, tN, x0, dt, f, true_solution):
+    t, approx_solution = method(t0, tN, x0, dt, f)
     local_error = abs(true_solution(t[1]) - approx_solution[1])
     global_error = abs(true_solution(t[-1]) - approx_solution[-1])
     return local_error, global_error
 
 
 dt = 2e-5
-A1, A2 = do_numerical_method(forward_euler, t0, tN, x0, dt)
+A1, A2 = do_numerical_method(forward_euler, t0, tN, x0, dt, f1, true_solution1)
 
 dt = 2e-6
-A3, A4 = do_numerical_method(forward_euler, t0, tN, x0, dt)
+A3, A4 = do_numerical_method(forward_euler, t0, tN, x0, dt, f1, true_solution1)
 
 print('Forward Euler:')
 print(f'A1 = {A1}')
@@ -80,10 +80,10 @@ print(f'A3 = {A3}')
 print(f'A4 = {A4}')
 
 dt = 2e-5
-A5, A6 = do_numerical_method(heun, t0, tN, x0, dt)
+A5, A6 = do_numerical_method(heun, t0, tN, x0, dt, f1, true_solution1)
 
 dt = 2e-6
-A7, A8 = do_numerical_method(heun, t0, tN, x0, dt)
+A7, A8 = do_numerical_method(heun, t0, tN, x0, dt, f1, true_solution1)
 
 print('Heun:')
 print(f'A5 = {A5}')
@@ -92,14 +92,26 @@ print(f'A7 = {A7}')
 print(f'A8 = {A8}')
 
 dt = 2e-5
-A9, A10 = do_numerical_method(rk2, t0, tN, x0, dt)
+A9, A10 = do_numerical_method(rk2, t0, tN, x0, dt, f1, true_solution1)
 
 dt = 2e-6
-A11, A12 = do_numerical_method(rk2, t0, tN, x0, dt)
+A11, A12 = do_numerical_method(rk2, t0, tN, x0, dt, f1, true_solution1)
 
 print('rk2:')
 print(f'A9 = {A9}')
 print(f'A10 = {A10}')
 print(f'A11 = {A11}')
 print(f'A12 = {A12}')
+
+
+''' Problem 2
+x'(t) = 8 * sin(x)
+x(0) = pi / 4
+t0 = 0, tN = 2, dt = ?
+
+(a) predictor-corrector method, dt = 0.1 
+(b) predictor-corrector method, dt = 0.01
+'''
+
+
 #plt.show()
