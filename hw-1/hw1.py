@@ -48,23 +48,30 @@ def heun(t0, tN, x0, dt):
     return t, x
 
 
-# tplot = np.linspace(t0, tN, 10000)
-# xplot = true_solution(tplot)
-# plt.plot(tplot, xplot, 'k')
+def rk2(t0, tN, x0, dt):
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros_like(t)
+    x[0] = x0
+
+    for k in range(len(t) - 1):
+        x[k + 1] = (x[k] + dt *
+                    f(x[k] + (dt / 2) * f(x[k], t[k]), t[k] + (dt / 2)))
+
+    return t, x
+
+
+def do_numerical_method(method, t0, tN, x0, dt):
+    t, approx_solution = method(t0, tN, x0, dt)
+    local_error = abs(true_solution(t[1]) - approx_solution[1])
+    global_error = abs(true_solution(t[-1]) - approx_solution[-1])
+    return local_error, global_error
+
 
 dt = 2e-5
-t, approx_solution = forward_euler(t0, tN, x0, dt)
-local_error = abs(true_solution(t[1]) - approx_solution[1])
-global_error = abs(true_solution(t[-1]) - approx_solution[-1])
-A1 = local_error
-A2 = global_error
+A1, A2 = do_numerical_method(forward_euler, t0, tN, x0, dt)
 
 dt = 2e-6
-t, approx_solution = forward_euler(t0, tN, x0, dt)
-local_error = abs(true_solution(t[1]) - approx_solution[1])
-global_error = abs(true_solution(t[-1]) - approx_solution[-1])
-A3 = local_error
-A4 = global_error
+A3, A4 = do_numerical_method(forward_euler, t0, tN, x0, dt)
 
 print('Forward Euler:')
 print(f'A1 = {A1}')
@@ -73,18 +80,10 @@ print(f'A3 = {A3}')
 print(f'A4 = {A4}')
 
 dt = 2e-5
-t, approx_solution = heun(t0, tN, x0, dt)
-local_error = abs(true_solution(t[1]) - approx_solution[1])
-global_error = abs(true_solution(t[-1]) - approx_solution[-1])
-A5 = local_error
-A6 = global_error
+A5, A6 = do_numerical_method(heun, t0, tN, x0, dt)
 
 dt = 2e-6
-t, approx_solution = heun(t0, tN, x0, dt)
-local_error = abs(true_solution(t[1]) - approx_solution[1])
-global_error = abs(true_solution(t[-1]) - approx_solution[-1])
-A7 = local_error
-A8 = global_error
+A7, A8 = do_numerical_method(heun, t0, tN, x0, dt)
 
 print('Heun:')
 print(f'A5 = {A5}')
@@ -92,4 +91,15 @@ print(f'A6 = {A6}')
 print(f'A7 = {A7}')
 print(f'A8 = {A8}')
 
+dt = 2e-5
+A9, A10 = do_numerical_method(rk2, t0, tN, x0, dt)
+
+dt = 2e-6
+A11, A12 = do_numerical_method(rk2, t0, tN, x0, dt)
+
+print('rk2:')
+print(f'A9 = {A9}')
+print(f'A10 = {A10}')
+print(f'A11 = {A11}')
+print(f'A12 = {A12}')
 #plt.show()
