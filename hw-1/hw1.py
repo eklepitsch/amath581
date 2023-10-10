@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
+
 
 ''' Problem 1
 x'(t) = -4 * x * sin(t)
@@ -110,7 +112,7 @@ x'(t) = 8 * sin(x)
 x(0) = pi / 4
 t0 = 0, tN = 2, dt = ?
 
-(a) predictor-corrector method, dt = 0.1 
+(a) predictor-corrector method, dt = 0.1
 (b) predictor-corrector method, dt = 0.01
 '''
 x0 = np.pi / 4
@@ -158,7 +160,56 @@ A16 = ge
 print('Predictor-corrector:')
 print(f'A13 = {A13}')
 print(f'A14 = {A14}')
-print(f'A14 = {A15}')
+print(f'A15 = {A15}')
 print(f'A16 = {A16}')
 
-#plt.show()
+
+''' Problem 3
+FitzHugh-Nagumo model
+v = voltage, w = membrane channel activity
+v'(t) = v - (1/3)v^3 - w + I(t)  
+w'(t) = (a + v - bw) / T
+I(t) = (1/10) * (5 + sin(pi * t / 10))
+
+ICs:
+v(0) = 0.1, w(0) = 1
+t0 = 0, tN = 100
+'''
+a = 0.7
+b = 1
+T = 12
+t0 = 0
+tN = 100
+v0 = 0.1
+w0 = 1
+
+
+def fitzhugh_nagumo(t, z, a, b, T):
+    v, w = z
+    return [
+        v - (1 / 3) * pow(v, 3) - w + (1 / 10) * (5 + np.sin(np.pi * t / 10)),
+        (a + v - b * w) / T
+    ]
+
+
+def solve_fitzhugh_nagumo(tol):
+    sol = solve_ivp(fitzhugh_nagumo, [t0, tN], [v0, w0],
+                    args=(a, b, T), atol=tol, rtol=tol, method='RK45')
+    t = sol.t
+    v = sol.y[0]
+    w = sol.y[1]
+    dt = [b - a for a, b in zip(t, t[1:])]
+    average_time_step = sum(dt) / len(dt)
+    final_voltage = v[-1]
+
+    return final_voltage, average_time_step
+
+
+A17, A18 = solve_fitzhugh_nagumo(tol=1e-4)
+A19, A20 = solve_fitzhugh_nagumo(tol=1e-9)
+
+print('fitzhugh_nagumo:')
+print(f'A17 = {A17}')
+print(f'A18 = {A18}')
+print(f'A19 = {A19}')
+print(f'A20 = {A20}')
