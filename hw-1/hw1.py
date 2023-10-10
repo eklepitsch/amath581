@@ -3,6 +3,14 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 
+def my_plotter(ax, data1, data2, param_dict):
+    """
+    A helper function to make a graph.
+    """
+    out = ax.plot(data1, data2, **param_dict)
+    return out
+
+
 ''' Problem 1
 x'(t) = -4 * x * sin(t)
 x(0) = 1
@@ -62,19 +70,34 @@ def rk2(t0, tN, x0, dt, f):
     return t, x
 
 
-def do_numerical_method(method, t0, tN, x0, dt, f, true_solution):
-    t, approx_solution = method(t0, tN, x0, dt, f)
-    local_error = abs(true_solution(t[1]) - approx_solution[1])
-    global_error = abs(true_solution(t[-1]) - approx_solution[-1])
-    final_approximation = approx_solution[-1]
-    return local_error, global_error, final_approximation
+def lte(t, true_solution, approx_solution):
+    # Local truncation error
+    return abs(true_solution(t[1]) - approx_solution[1])
 
 
-dt = 2e-5
-A1, A2, _ = do_numerical_method(forward_euler, t0, tN, x0, dt, f1, true_solution1)
+def ge(t, true_solution, approx_solution):
+    # Global error
+    return abs(true_solution(t[-1]) - approx_solution[-1])
 
-dt = 2e-6
-A3, A4, _ = do_numerical_method(forward_euler, t0, tN, x0, dt, f1, true_solution1)
+
+fig1, ax1 = plt.subplots()
+ax1.set_title('Forward Euler')
+ax1.set_xlabel('time')
+
+dt = pow(2, -5)
+t, approx = forward_euler(t0, tN, x0, dt, f1)
+A1 = lte(t, true_solution1, approx)
+A2 = ge(t, true_solution1, approx)
+my_plotter(ax1, t, true_solution1(t), {'label': 'true solution'})
+my_plotter(ax1, t, approx, {'label': 'dt = 2^-5'})
+
+dt = pow(2, -6)
+t, approx = forward_euler(t0, tN, x0, dt, f1)
+A3 = lte(t, true_solution1, approx)
+A4 = ge(t, true_solution1, approx)
+my_plotter(ax1, t, approx, {'label': 'dt = 2^-6'})
+
+ax1.legend()
 
 print('Forward Euler:')
 print(f'A1 = {A1}')
@@ -82,11 +105,24 @@ print(f'A2 = {A2}')
 print(f'A3 = {A3}')
 print(f'A4 = {A4}')
 
-dt = 2e-5
-A5, A6, _ = do_numerical_method(heun, t0, tN, x0, dt, f1, true_solution1)
+fig2, ax2 = plt.subplots()
+ax2.set_title('Heun')
+ax2.set_xlabel('time')
 
-dt = 2e-6
-A7, A8, _ = do_numerical_method(heun, t0, tN, x0, dt, f1, true_solution1)
+dt = pow(2, -5)
+t, approx = heun(t0, tN, x0, dt, f1)
+A5 = lte(t, true_solution1, approx)
+A6 = ge(t, true_solution1, approx)
+my_plotter(ax2, t, true_solution1(t), {'label': 'true solution'})
+my_plotter(ax2, t, approx, {'label': 'dt = 2^-5'})
+
+dt = pow(2, -6)
+t, approx = heun(t0, tN, x0, dt, f1)
+A7 = lte(t, true_solution1, approx)
+A8 = ge(t, true_solution1, approx)
+my_plotter(ax2, t, approx, {'label': 'dt = 2^-6'})
+
+ax2.legend()
 
 print('Heun:')
 print(f'A5 = {A5}')
@@ -94,11 +130,24 @@ print(f'A6 = {A6}')
 print(f'A7 = {A7}')
 print(f'A8 = {A8}')
 
-dt = 2e-5
-A9, A10, _ = do_numerical_method(rk2, t0, tN, x0, dt, f1, true_solution1)
+fig3, ax3 = plt.subplots()
+ax3.set_title('RK2')
+ax3.set_xlabel('time')
 
-dt = 2e-6
-A11, A12, _ = do_numerical_method(rk2, t0, tN, x0, dt, f1, true_solution1)
+dt = pow(2, -5)
+t, approx = rk2(t0, tN, x0, dt, f1)
+A9 = lte(t, true_solution1, approx)
+A10 = ge(t, true_solution1, approx)
+my_plotter(ax3, t, true_solution1(t), {'label': 'true solution'})
+my_plotter(ax3, t, approx, {'label': 'dt = 2^-5'})
+
+dt = pow(2, -6)
+t, approx = rk2(t0, tN, x0, dt, f1)
+A11 = lte(t, true_solution1, approx)
+A12 = ge(t, true_solution1, approx)
+my_plotter(ax3, t, approx, {'label': 'dt = 2^-6'})
+
+ax3.legend()
 
 print('rk2:')
 print(f'A9 = {A9}')
@@ -140,22 +189,29 @@ def predictor_corrector(t0, tN, x0, dt, f):
     # Do remaining steps using predictor-corrector
     for k in range(1, len(t) - 1):
         xp = x[k] + (dt / 2) * (3 * f(x[k], t[k]) - f(x[k-1], t[k-1]))
-        x[k + 1] = x[k] + (dt / 2) * (3 * f(xp, t[k+1]) + f(x[k], t[k]))
+        x[k + 1] = x[k] + (dt / 2) * (f(xp, t[k+1]) + f(x[k], t[k]))
 
     return t, x
 
 
+fig4, ax4 = plt.subplots()
+ax4.set_title('Predictor-corrector')
+ax4.set_xlabel('time')
+
 dt = 0.1
-_, ge, final_approximation = do_numerical_method(
-    predictor_corrector, t0, tN, x0, dt, f2, true_solution2)
-A13 = final_approximation
-A14 = ge
+t, approx = predictor_corrector(t0, tN, x0, dt, f2)
+A13 = approx[-1]
+A14 = ge(t, true_solution2, approx)
+my_plotter(ax4, t, true_solution2(t), {'label': 'true solution'})
+my_plotter(ax4, t, approx, {'label': 'dt = 0.1'})
 
 dt = 0.01
-_, ge, final_approximation = do_numerical_method(
-    predictor_corrector, t0, tN, x0, dt, f2, true_solution2)
-A15 = final_approximation
-A16 = ge
+t, approx = predictor_corrector(t0, tN, x0, dt, f2)
+A15 = approx[-1]
+A16 = ge(t, true_solution2, approx)
+my_plotter(ax4, t, approx, {'label': 'dt = 0.01'})
+
+ax4.legend()
 
 print('Predictor-corrector:')
 print(f'A13 = {A13}')
@@ -167,7 +223,7 @@ print(f'A16 = {A16}')
 ''' Problem 3
 FitzHugh-Nagumo model
 v = voltage, w = membrane channel activity
-v'(t) = v - (1/3)v^3 - w + I(t)  
+v'(t) = v - (1/3)v^3 - w + I(t)
 w'(t) = (a + v - bw) / T
 I(t) = (1/10) * (5 + sin(pi * t / 10))
 
@@ -213,3 +269,5 @@ print(f'A17 = {A17}')
 print(f'A18 = {A18}')
 print(f'A19 = {A19}')
 print(f'A20 = {A20}')
+
+#plt.show()
