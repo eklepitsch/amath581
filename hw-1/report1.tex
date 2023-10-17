@@ -1,0 +1,330 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage{geometry}
+\usepackage{float}
+ \geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+\title{AMATH 581, Report 1}
+\author{Evan Klepitsch}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Overview}
+In this assignment, I will solve the initial value problem
+\begin{equation} \label{eq:1}
+    \frac{dx}{dt} = -4x\sin(t)\ \textrm{with}\ x(0) = 1
+\end{equation}
+from $t_0 = 0$ to $t_N = 8$ using the Forward Euler, Heun's, and RK2 methods.  For each method, I will approximate the solution using multiple values of $\Delta t$.  Finally, I will compare the accuracy of the methods by evaluating the global error $E_N$ and the relationship between $E_N$ and $\Delta t$.
+
+It is given that the true solution to Equation \ref{eq:1} is
+\begin{equation} \label{eq:2}
+    x(t) = e^{4(\cos(t) - 1)}
+\end{equation}
+\section{Forward Euler Method}
+The Forward Euler method is given by
+\begin{equation} \label{eq:3}
+    x[k+1] = x[k] + {\Delta t}f(x[k], t[k])
+\end{equation}
+I evaluated this method using $\Delta t = 2^{-5}$, $\Delta t = 2^{-6}$, $\Delta t = 2^{-7}$, $\Delta t = 2^{-8}$, $\Delta t = 2^{-9}$, $\Delta t = 2^{-10}$, $\Delta t = 2^{-11}$, and $\Delta t = 2^{-12}$.  The results are plotted in Figure \ref{fig:forward-euler-approximations}.
+\begin{figure}[H]
+    \caption{}
+    \centering
+    \includegraphics[scale=0.9]{Forward-Euler-true-vs-approx}
+    \label{fig:forward-euler-approximations}
+\end{figure}
+As $\Delta t$ decreases, the approximate solutions become closer to the true solution.  The global error is the difference between the true and approximate solutions at time $t_N$ and is given by
+\begin{equation} \label{eq:4}
+    E_N = |x(t_N) - x_N|
+\end{equation}
+The global error for each $\Delta t$ is given in Figure \ref{fig:forward-euler-global-error}.  Both $\Delta t$ and $E_N$ vary exponentially, so they are plotted on a log-log plot so the relationship can be easily understood.  The relationship between $ln(\Delta t)$ and $ln(E_N)$ is roughly linear.  Figure \ref{fig:forward-euler-global-error} shows the best fit line and its slope, which is $\approx 0.92472$.
+\begin{figure}[H]
+    \caption{}
+    \centering
+    \includegraphics[width=1\textwidth]{images/Forward-Euler-global-error}
+    \label{fig:forward-euler-global-error}
+\end{figure}
+\section{Heun's Method}
+Heun's method is given by
+\begin{equation} \label{eq:5}
+    x[k+1] = x[k] + \frac{\Delta t}{2}(f(x[k], t[k]) + f(x[k] + {\Delta t}f(x[k], t[k]), t[k] + \Delta t))
+\end{equation}
+I evaluated this method using the same values of $\Delta t$ from the prior section.  The results are plotted in Figure \ref{fig:heun-approximations}.  This figure shows a "zoomed in" view from $t = 0$ to $t = 0.005$. It is not practical to show the entire time span since the approximate solutions are generally more accurate than in the Forward Euler case.  The increased accuracy makes it difficult to distinguish the approximate solutions from the true solutions when the entire time span is taken into view.  The "zoomed in" plot clearly illustrates how the approximate solutions approach the true solution as $\Delta t$ decreases.  I also omitted several values of $\Delta t$ from the plot to increase the clarity of the displayed values.  Only $\Delta t = 2^{-8}$, $\Delta t = 2^{-9}$, $\Delta t = 2^{-10}$, and $\Delta t = 2^{-12}$ are displayed.  When $\Delta t = 2^{-12}$ the error is so small it essentially overlaps the true solution in this plot.
+\begin{figure}[H]
+    \centering
+    \includegraphics{Heun-true-vs-approx}
+    \caption{}
+    \label{fig:heun-approximations}
+\end{figure}
+The global error was calculated for all values of $\Delta t$ and is plotted on a log-log plot in Figure \ref{fig:heun-global-error} along with the best fit slope, which is $\approx 2.04962$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{Heun-global-error}
+    \caption{}
+    \label{fig:heun-global-error}
+\end{figure}
+\section{RK2 Method}
+The RK2 method is given by
+\begin{equation} \label{eq:6}
+    x[k + 1] = x[k] + {\Delta t}f(x[k] + \frac{\Delta t}{2}f(x[k], t[k]), t[k] + \frac{\Delta t}{2})
+\end{equation}
+I evaluated this method using the same values of $\Delta t$ from the prior sections.  The results are plotted in Figure \ref{fig:rk2-approximations}.  Once again, I chose to display a "zoomed in" view and omit a few values of $\Delta t$ for clarity.
+\begin{figure}[H]
+    \centering
+    \includegraphics{RK2-true-vs-approx}
+    \caption{}
+    \label{fig:rk2-approximations}
+\end{figure}
+The global error for all values of $\Delta t$ is plotted on a log-log plot in Figure \ref{fig:rk2-global-error} along with the best fit slope, which is $\approx 2.06484$.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\textwidth]{RK2-global-error}
+    \caption{}
+    \label{fig:rk2-global-error}
+\end{figure}
+\section{Conclusion}
+Forward Euler is a first order method, whereas Heun's and RK2 are second order.  The slope of the best fit lines for each method approximately equal the order of the method.  We should expect to see such a relationship because the order of the method refers to the exponent on $\Delta t$.  When a log-log plot is generated, this exponent approximates the slope of the plot.  This can be observed through some simple logarithmic math.  Let $\alpha$ be the order of a method.  Then,
+\begin{equation} \label{eq:7}
+\begin{split}
+    E_N = O({\Delta t}^\alpha) \\
+\end{split}
+\end{equation}
+The expression $O(\Delta t^\alpha)$ means "proportional to $\Delta t^{\alpha}$", so we can replace it with $c{\Delta t}^\alpha$ (where $c$ is an arbitrary constant).  Then rewrite equation 7 and take the logarithm of both sides.
+\begin{equation} \label{eq:8}
+\begin{split}
+    ln(E_N) = ln(c{\Delta t}^\alpha) \\
+    ln(E_N) = ln(c) + ln({\Delta t}^\alpha) \\
+    ln(E_N) - ln(c) = {\alpha}ln(\Delta t)
+\end{split}
+\end{equation}
+For a good method, the error $E_N$ will be small (significantly less than 1) and $|ln(E_N)|$ will be large.  So for reasonable choices of $c$ we can assume that $ln(E_N)$ dominates $ln(c)$ and ignore the latter.  It follows that the slope $m$ of the log-log plot is approximated by
+\begin{equation} \label{eq:9}
+    m \approx \alpha \approx \frac{ln(E_N)}{ln(\Delta t)}
+\end{equation}
+In summary, we conclude that the slope of the log-log plots is approximately equal to the order of the method.  This has been shown empircally through calculating the global error for the Forward Euler, Heun's, and RK2 methods.  It is also shown mathematically through Equations \ref{eq:8} and \ref{eq:9}.  The higher the order of a method, the greater the accuracy.  Generating log-log plots of $E_N$ vs $\Delta t$ for different methods and examining the slope is a good way to compare the accuracy of methods.  The method with the highest slope will generally be the most accurate.  For this IVP, the RK2 and Heun's methods have similar slopes, with RK2 being slightly higher.  RK2 or Heun's method should be chosen to solve this IVP if accuracy is the primary concern since they yield significantly more accurate results than Forward Euler.
+\section{Code}
+I used Python to generate the figures in this report.  The code is given below.  It was tested using Python 3.12.0.
+\begin{verbatim}
+    import numpy as np
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    from collections import namedtuple
+    from math import ceil
+    
+    # Set to True to save the figures to .png files
+    save_figures = False
+    if save_figures:
+        # Bump up the resolution (adds processing time)
+        mpl.rcParams['figure.dpi'] = 900
+    
+    
+    def float_formatter(x):
+        """
+        Specify the precision and notation (positional vs. scientific)
+        for floating point values.
+        """
+        p = 6
+        if abs(x) < 1e-4 or abs(x) > 1e4:
+            return np.format_float_scientific(x, precision=p)
+        else:
+            return np.format_float_positional(x, precision=p)
+    
+    
+    np.set_printoptions(formatter={'float': float_formatter})
+    
+    ''' Problem 1
+    ODE: x'(t) = -4 * x * sin(t)
+    
+    ICs:
+    x(0) = 1
+    t0 = 0, tN = 8, dt = ?
+    
+    Approximate the solution with the following methods
+    (a) Forward Euler, dt = [2e-5, 2e-12]
+    (b) Huen, dt = [2e-5, 2e-12]
+    (c) RK2, dt = [2e-5, 2e-12]
+    '''
+    x0 = 1
+    t0 = 0
+    tN = 8
+    
+    
+    def f(x, t):
+        """The RHS of the ODE"""
+        return -4 * x * np.sin(t)
+    
+    
+    def true_solution(t):
+        """The true solution to the ODE"""
+        return np.exp(4 * (np.cos(t) - 1))
+    
+    
+    # Part (a)
+    def forward_euler(t0, tN, x0, dt, f):
+        """Forward Euler method"""
+        t = np.arange(t0, tN + dt / 2, dt)
+        x = np.zeros_like(t)
+        x[0] = x0
+    
+        for k in range(len(t) - 1):
+            x[k + 1] = x[k] + dt * f(x[k], t[k])
+    
+        return t, x
+    
+    
+    def heun(t0, tN, x0, dt, f):
+        """Heun's method"""
+        t = np.arange(t0, tN + dt / 2, dt)
+        x = np.zeros_like(t)
+        x[0] = x0
+    
+        for k in range(len(t) - 1):
+            x[k + 1] =\
+                x[k] + (dt / 2) * (f(x[k], t[k]) +
+                                   f(x[k] + dt * f(x[k], t[k]), t[k] + dt))
+    
+        return t, x
+    
+    
+    def rk2(t0, tN, x0, dt, f):
+        """RK2 method"""
+        t = np.arange(t0, tN + dt / 2, dt)
+        x = np.zeros_like(t)
+        x[0] = x0
+    
+        for k in range(len(t) - 1):
+            x[k + 1] = (x[k] + dt *
+                        f(x[k] + (dt / 2) * f(x[k], t[k]), t[k] + (dt / 2)))
+    
+        return t, x
+    
+    
+    def lte(t, true_solution, approx_solution):
+        """Local truncation error"""
+        return abs(true_solution(t[1]) - approx_solution[1])
+    
+    
+    def ge(t, true_solution, approx_solution):
+        """Global error"""
+        return abs(true_solution(t[-1]) - approx_solution[-1])
+    
+    
+    # Define some namedtuples for convenience
+    DeltaT = namedtuple('DeltaT', 'decimal str')
+    delta_t = [DeltaT(pow(2, -5), r'$2^{-5}$'),
+               DeltaT(pow(2, -6), r'$2^{-6}$'),
+               DeltaT(pow(2, -7), r'$2^{-7}$'),
+               DeltaT(pow(2, -8), r'$2^{-8}$'),
+               DeltaT(pow(2, -9), r'$2^{-9}$'),
+               DeltaT(pow(2, -10), r'$2^{-10}$'),
+               DeltaT(pow(2, -11), r'$2^{-11}$'),
+               DeltaT(pow(2, -12), r'$2^{-12}$')]
+    
+    Method = namedtuple('Method', 'name fn')
+    
+    # Define the methods to use
+    methods = [Method('Forward Euler', forward_euler),
+               Method('Heun', heun),
+               Method('RK2', rk2)]
+    
+    for method in methods:
+        # Fig1 is the plot of the true solution vs. the approximation
+        fig1, ax1 = plt.subplots(gridspec_kw={'left': 0.15})
+        ax1.set_title(f'Approximate solutions for {method.name} method')
+        ax1.set_xlabel('time')
+        ax1.set_ylabel('x(t)')
+    
+        # Fig2 is the plot of the global error vs. delta t
+        fig2, ax2 = plt.subplots(nrows=1, ncols=2, width_ratios=[5, 3],
+                                 gridspec_kw={
+                                    'left': 0.08,     # Left padding
+                                    'right': 0.96,    # Right padding
+                                    'wspace': 0.05})  # Space between axes
+        fig2.suptitle(f'Global error for {method.name} method')
+        fig2.set_figwidth(fig2.get_figwidth() * 1.5)    # Increase the width
+    
+        # Column 0 = delta t, Column 1 = global error
+        global_err = np.zeros((len(delta_t), 2))
+    
+        # For each delta t, approximate the solution using the given method
+        for i, dt in enumerate(delta_t):
+            t, approx = method.fn(t0, tN, x0, dt.decimal, f)
+    
+            # Record delta t and global error (for plotting later)
+            global_err[i][0] = dt.decimal
+            global_err[i][1] = ge(t, true_solution, approx)
+    
+            # For Huen and RK2, show a zoomed in plot because the true solution
+            # and the approximate solutions are too close together in the full plot
+            # and cannot be distinguished.
+            max_point = len(approx)
+            if method.name == 'Heun' or method.name == 'RK2':
+                max_time = 0.005
+                max_point = ceil(max_time / dt.decimal)
+    
+                # Plot the approximate solution for select delta t
+                if dt.decimal in [pow(2, -8), pow(2, -9), pow(2, -10), pow(2, -12)]:
+                    ax1.plot(t[:max_point], approx[:max_point],
+                             label=fr'$\Delta$t = {dt.str}')
+            else:
+                ax1.plot(t[:max_point], approx[:max_point],
+                         label=fr'$\Delta$t = {dt.str}')
+    
+            # Plot true solution on last iteration
+            if i == len(delta_t) - 1:
+                ax1.plot(t[:max_point], true_solution(t[:max_point]),
+                         label='true solution', linestyle=':', linewidth=4)
+    
+            ax1.ticklabel_format(useOffset=False)
+    
+        # Take the natural logarithm of delta t and the global error
+        dt = global_err[:, 0]
+        en = global_err[:, 1]
+        log_dt = np.log(dt)
+        log_en = np.log(en)
+    
+        # Find the best fit line through ln(En)
+        [m, b] = np.polyfit(log_dt, log_en, 1)
+        best_fit_fn = np.poly1d([m, b])
+        best_fit_data = best_fit_fn(log_dt)
+    
+        # Plot the data and best fit line
+        ax2[0].set_xlabel(r'ln($\Delta$t)')
+        ax2[0].set_ylabel(r'ln($E_N$)')
+        ax2[0].plot(log_dt, log_en, label='Actual error',
+                    marker='o', markersize=6, linestyle='')
+        ax2[0].plot(log_dt, best_fit_data, label='Best fit')
+        ax2[0].text(np.mean(log_dt),
+                 np.mean(best_fit_data) - np.ptp(best_fit_data) / 3,
+                 f'Slope of best fit = {round(m, 5)}')
+    
+        # Plot a table containing the En and ln(En) values
+        table_values = []
+        for dt, err, log_err in zip(delta_t, global_err[:, 1], log_en):
+            table_values.append([dt.str,
+                                 float_formatter(err),
+                                 float_formatter(log_err)])
+        table = plt.table(cellText=table_values,
+                          colLabels=[r'$\Delta$t', r'$E_N$', r'ln($E_N$)'],
+                          bbox=[0, 0 ,1 , 1])
+        ax2[1].add_table(table)
+        ax2[1].axis('off')
+    
+        # Add legends to the plots
+        ax1.legend()
+        ax2[0].legend()
+    
+        if save_figures:
+            fig1.savefig(f'{method.name.replace(" ", "-")}-true-vs-approx')
+            fig2.savefig(f'{method.name.replace(" ", "-")}-global-error')
+    
+    # Show the plots if we're not saving them to files
+    if not save_figures:
+        plt.show()
+\end{verbatim}
+\end{document}
