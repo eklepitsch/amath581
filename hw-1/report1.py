@@ -2,21 +2,13 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from collections import namedtuple
-from math import floor, ceil
+from math import ceil
 
 # Set to True to save the figures to .png files
 save_figures = False
 if save_figures:
     # Bump up the resolution (adds processing time)
     mpl.rcParams['figure.dpi'] = 900
-
-
-def plot(ax, data1, data2, param_dict):
-    """
-    A helper function to make a graph.
-    """
-    out = ax.plot(data1, data2, **param_dict)
-    return out
 
 
 def float_formatter(x):
@@ -129,11 +121,6 @@ methods = [Method('Forward Euler', forward_euler),
            Method('RK2', rk2)]
 
 for method in methods:
-    # Adjust left margin for Heun and RK2 plots since it looks better
-    gridspec = None
-    if method.name == 'Heun' or method.name == 'RK2':
-        gridspec ={'left': 0.15}
-
     # Fig1 is the plot of the true solution vs. the approximation
     fig1, ax1 = plt.subplots(gridspec_kw={'left': 0.15})
     ax1.set_title(f'Approximate solutions for {method.name} method')
@@ -170,11 +157,11 @@ for method in methods:
 
             # Plot the approximate solution for select delta t
             if dt.decimal in [pow(2, -8), pow(2, -9), pow(2, -10), pow(2, -12)]:
-                plot(ax1, t[:max_point], approx[:max_point],
-                     {'label': fr'$\Delta$t = {dt.str}'})
+                ax1.plot(t[:max_point], approx[:max_point],
+                         label=fr'$\Delta$t = {dt.str}')
         else:
-            plot(ax1, t[:max_point], approx[:max_point],
-                 {'label': fr'$\Delta$t = {dt.str}'})
+            ax1.plot(t[:max_point], approx[:max_point],
+                     label=fr'$\Delta$t = {dt.str}')
 
         # Plot true solution on last iteration
         if i == len(delta_t) - 1:
@@ -197,10 +184,9 @@ for method in methods:
     # Plot the data and best fit line
     ax2[0].set_xlabel(r'ln($\Delta$t)')
     ax2[0].set_ylabel(r'ln($E_N$)')
-    plot(ax2[0], log_dt, log_en,
-         {'label': 'Actual error', 'marker': 'o',
-          'markersize': 6, 'linestyle': ''})
-    plot(ax2[0], log_dt, best_fit_data, {'label': 'Best fit'})
+    ax2[0].plot(log_dt, log_en, label='Actual error',
+                marker='o', markersize=6, linestyle='')
+    ax2[0].plot(log_dt, best_fit_data, label='Best fit')
     ax2[0].text(np.mean(log_dt),
              np.mean(best_fit_data) - np.ptp(best_fit_data) / 3,
              f'Slope of best fit = {round(m, 5)}')
@@ -222,8 +208,8 @@ for method in methods:
     ax2[0].legend()
 
     if save_figures:
-        fig1.savefig(f'{method.name.replace(' ', '-')}-true-vs-approx')
-        fig2.savefig(f'{method.name.replace(' ', '-')}-global-error')
+        fig1.savefig(f'{method.name.replace(" ", "-")}-true-vs-approx')
+        fig2.savefig(f'{method.name.replace(" ", "-")}-global-error')
 
 # Show the plots if we're not saving them to files
 if not save_figures:
