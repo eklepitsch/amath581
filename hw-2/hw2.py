@@ -155,5 +155,162 @@ if show_plots:
         ax[0].legend()
         ax[1].legend()
 
+''' Problem 2, parts (a-b)
+IVP:
+
+x'' - x = 0
+x(0) = 1
+x'(0) = 0
+t0 = 0
+tN = 1
+
+This 2nd-order IVP can be written as a system of 1st-order ODEs.
+Let x = (y z)
+y' = z
+z' = y
+y(0) = 1
+z(0) = 0
+
+Given: The true solution is x(t) = 1/2 * (e^2 + e^-t).
+'''
+print('Problem 2\n------------')
+
+
+def true_solution(t):
+    return (1 / 2) * (np.exp(t) + np.exp(-1 * t))
+
+
+def ge(t, true_solution, approx_solution):
+    # Global error
+    return abs(true_solution(t[-1]) - approx_solution[-1])
+
+
+def trapezoidal_method_for_2_a(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])  # vector valued [y z]
+    x[:, 0] = x0
+    y = x[0, :]
+    z = x[1, :]
+
+    # Constants
+    A = (2 / dt) + (dt / 2)
+    B = (2 / dt) - (dt / 2)
+
+    for k in range(len(t) - 1):
+        z[k + 1] = (2 * y[k] + A * z[k]) / B
+        y[k + 1] = y[k] + (dt / 2) * (z[k] + z[k + 1])
+
+    return t, x
+
+
+fig, ax = plt.subplots(1, 2)
+fig.suptitle('Problem 2 - parts (a-b)')
+
+t0 = 0
+tN = 1
+x0 = np.array([[1, 0]])
+dt = 0.1
+t, x = trapezoidal_method_for_2_a(t0, tN, x0, dt)
+
+A7 = x[0, -1]
+A8 = ge(t, true_solution, x[0, :])
+print(f'A7: {A7}')
+print(f'A8: {A8}')
+
+if show_plots:
+    ax[0].plot(t, x[0, :], 'ro', label='Approx')
+    ax[0].plot(t, true_solution(t), label='True soln')
+    ax[0].set_title(rf'$\Delta t$ = {dt}')
+    ax[0].legend()
+
+dt = 0.01
+t, x = trapezoidal_method_for_2_a(t0, tN, x0, dt)
+A9 = x[0, -1]
+A10 = ge(t, true_solution, x[0, :])
+print(f'A9: {A9}')
+print(f'A10: {A10}')
+
+if show_plots:
+    ax[1].plot(t, x[0, :], 'ro', label='Approx')
+    ax[1].plot(t, true_solution(t), label='True soln')
+    ax[1].set_title(rf'$\Delta t$ = {dt}')
+    ax[1].legend()
+
+
+''' Problem 2, parts (c-d)
+IVP:
+
+x'' + x = 0
+x(0) = 1
+x'(0) = 0
+t0 = 0
+tN = 1
+
+This 2nd-order IVP can be written as a system of 1st-order ODEs.
+Let x = (y z)
+y' = z
+z' = -y
+y(0) = 1
+z(0) = 0
+
+Given: The true solution is x(t) = cos(t).
+'''
+
+
+def midpoint_method_for_2_c(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])
+    x[:, 0] = x0
+
+    y = x[0, :]
+    z = x[1, :]
+
+    # Use Forward Euler to calculate x[1]
+    y[1] = y[0] + dt * z[0]
+    z[1] = z[0] - dt * y[0]
+
+    # Use Midpoint Method to calculate the rest
+    for k in range(1, len(t) - 1):
+        y[k + 1] = y[k - 1] + 2 * dt * z[k]
+        z[k + 1] = z[k - 1] - 2 * dt * y[k]
+
+    return t, x
+
+
+fig, ax = plt.subplots(1, 2)
+fig.suptitle('Problem 2, parts (c-d)')
+
+x0 = np.array([1, 0])
+t0 = 0
+tN = 1
+
+dt = 0.1
+t, x = midpoint_method_for_2_c(t0, tN, x0, dt)
+A11 = x[0, -1]
+A12 = ge(t, np.cos, x[0, :])
+print(f'A11 = {A11}')
+print(f'A12 = {A12}')
+
+if show_plots:
+    ax[0].plot(t, x[0, :], 'ro', label='Approx')
+    ax[0].plot(t, np.cos(t), label='True soln')
+    ax[0].set_title(rf'$\Delta t$ = {dt}')
+    ax[0].legend()
+
+dt = 0.01
+t, x = midpoint_method_for_2_c(t0, tN, x0, dt)
+A13 = x[0, -1]
+A14 = ge(t, np.cos, x[0, :])
+print(f'A13 = {A13}')
+print(f'A14 = {A14}')
+
+if show_plots:
+    ax[1].plot(t, x[0, :], 'ro', label='Approx')
+    ax[1].plot(t, np.cos(t), label='True soln')
+    ax[1].set_title(rf'$\Delta t$ = {dt}')
+    ax[1].legend()
+
 if show_plots:
     plt.show()
