@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-show_plots = True
+show_plots = False
 
 
 def bisection(f, a, b, tol):
@@ -311,6 +311,127 @@ if show_plots:
     ax[1].plot(t, np.cos(t), label='True soln')
     ax[1].set_title(rf'$\Delta t$ = {dt}')
     ax[1].legend()
+
+
+''' Problem 3
+Chebyshev equation:
+
+(1 - x^2) * y'' - x * y' + a^2 * y = 0
+
+Solve using 2nd-order central difference scheme (ie. the "Direct Method").
+
+y'' - p(x) * y' + q(x) * y = r(x)
+
+a) a = 1, y(-0.5) = -0.5, y(0.5) = 0.5, dx = 0.1; true solution: y = x.
+b) a = 2, y(-0.5) = 0.5, y(0.5) = 0.5, dx = 0.1; true solution: y = 1 - 2x^2
+c) a = 3, y(-.5) = -1/3, y(0.5) = 1/3, dx = 0.1; true solution: y = x - (4/3)x^3
+'''
+print('Problem 3\n------------')
+
+
+def p(x):
+    return -1 * x / (1 - x**2)
+
+
+def q(x, a):
+    return a**2 / (1 - x**2)
+
+
+def r(x):
+    return 0
+
+
+def direct_method(xi, xf, yi, yf, a, N):
+    """2nd-order central difference scheme."""
+    x = np.linspace(xi, xf, N)
+    dx = x[1] - x[0]
+
+    # We will solve the matrix eqn Ay = B,
+    # where A is the discretization matrix for the LHS of the ODE,
+    # and B is the discretization matrix for the RHS of the ODE.
+    A = np.zeros((N, N))
+    B = np.zeros((N, 1))
+
+    # Populate the first and last values which are easy.
+    A[0, 0] = 1
+    A[-1, -1] = 1
+    B[0] = yi
+    B[-1] = yf
+
+    # Populate the rest of the matrices
+    for k in range(1, N - 1):
+        A[k, k - 1] = 1 - (dx / 2) * p(x[k])
+        A[k, k] = -2 + (dx ** 2) * q(x[k], a)
+        A[k, k + 1] = 1 + (dx / 2) * p(x[k])
+        B[k] = (dx ** 2) * r(k)
+
+    # Solve the system
+    return x, np.linalg.solve(A, B).reshape(N)
+
+
+def max_error(approx_soln, true_soln):
+    if len(approx_soln) != len(true_soln):
+        return -1
+
+    return max([abs(i[1] - i[0]) for i in list(zip(approx_soln, true_soln))])
+
+
+def true_solution_a(x):
+    return x
+
+
+def true_solution_b(x):
+    return 1 - 2 * x**2
+
+
+def true_solution_c(x):
+    return x - (4 / 3) * x**3
+
+
+fig, ax = plt.subplots(1, 3)
+fig.suptitle('Problem 3')
+
+# Part (a)
+x, y = direct_method(xi=-0.5, xf=0.5, yi=-0.5, yf=0.5, a=1, N=11)
+
+if show_plots:
+    ax[0].plot(x, true_solution_a(x), label='true soln')
+    ax[0].plot(x, y, 'ro', label='approx')
+    ax[0].set_title('Part (a)')
+    ax[0].legend()
+
+A15 = y[5]  # x = 0 is index 5
+A16 = max_error(y, true_solution_a(x))
+print(f'A15: {A15}')
+print(f'A16: {A16}')
+
+# Part (b)
+x, y = direct_method(xi=-0.5, xf=0.5, yi=0.5, yf=0.5, a=2, N=11)
+
+if show_plots:
+    ax[1].plot(x, true_solution_b(x), label='true soln')
+    ax[1].plot(x, y, 'ro', label='approx')
+    ax[1].set_title('Part (b)')
+    ax[1].legend()
+
+A17 = y[5]  # x = 0 is index 5
+A18 = max_error(y, true_solution_b(x))
+print(f'A17: {A17}')
+print(f'A18: {A18}')
+
+# Part (c)
+x, y = direct_method(xi=-0.5, xf=0.5, yi=-1/3, yf=1/3, a=3, N=11)
+
+if show_plots:
+    ax[2].plot(x, true_solution_c(x), label='true soln')
+    ax[2].plot(x, y, 'ro', label='approx')
+    ax[2].set_title('Part (c)')
+    ax[2].legend()
+
+A19 = y[5]  # x = 0 is index 5
+A20 = max_error(y, true_solution_c(x))
+print(f'A19: {A19}')
+print(f'A20: {A20}')
 
 if show_plots:
     plt.show()
