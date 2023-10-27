@@ -2,3 +2,8 @@
 *.venv
 *.pdf
 *.png
+
+# TeXStudio files
+*.aux
+*.log
+*.synctex*
