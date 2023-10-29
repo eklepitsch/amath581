@@ -1,6 +1,7 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{bm}
 \graphicspath{ {./images/} }
 \usepackage{geometry}
 \usepackage{float}
@@ -14,6 +15,137 @@
 \author{Evan Klepitsch}
 \date{\today}
 \begin{document}
-	\maketitle
-	This is a test.
+\maketitle
+\section{Overview}
+In this report I will determine the order of accuracy for the Trapezoidal and Midpoint methods for solving ODEs.  The order of accuracy will be determined by solving the IVPs given in Homework 2 using multiple values of $\Delta t$ and comparing the resulting solutions with the true solution. Then, I will provide a stability analysis for the Trapezoidal method to determine the range of eigenvalues for which the approximations generated using this method are stable.
+\section{Trapezoidal method}
+The trapezoidal method is given by the formula
+\begin{equation} \label{eq:trapezoidal_method}
+\bm{x}_{k+1} = \bm{x}_k + \frac{\Delta t}{2}(f(t_k,\bm{x}_k) + f(t_{k+1},\bm{x}_{k+1}))
+\end{equation}
+To determine the order of accuracy of the trapezoidal method, we will analyze the following IVP, which has the true solution \begin{math}
+x(t) = \frac{1}{2}(e^t + e^{-t})
+\end{math}. \begin{equation} \label{eq:trapezoidal_ivp}
+x'' - x = 0\ \textrm{with}\ x(0) = 1\  \textrm{and}\ x'(0) = 0
+\end{equation}
+This is a second order ODE, but the trapezoidal method only works on first order ODEs of the form \begin{math}\bm{x}' = f(t,\bm{x})\end{math}. The reason is because the method averages the forward and backward Euler methods, and these methods are derived using the first derivative of the solution. At each step, we move forward or backward linearly using the first derivative as the slope. For an ODE involving higher order derivatives such methods cannot be applied directly. The higher order ODE must be re-written as a system of first order ODEs before the Trapezoidal method can be applied. In this case, we let \(y = x\) and \(z = x'\). Then it follows that
+\begin{equation}
+\begin{split}
+& y' = x' = z \\
+& z' = x'' = x = y
+\end{split}
+\end{equation}
+Therefore we have the first-order system
+\begin{equation}
+\bm{x}' = f(t, \bm{x})\ \textrm{where}\ \bm{x} = \begin{pmatrix}y \\ z\end{pmatrix}\ \textrm{and}\ f(t,\bm{x}) = \begin{pmatrix}z \\ y\end{pmatrix}
+\end{equation}
+For this IVP (\ref{eq:trapezoidal_ivp}), the trapezoidal method (\ref{eq:trapezoidal_method}) is written in vector form as
+\begin{equation} \label{eq:trapezoidal_method_vector_form}
+\begin{pmatrix}y_{k+1} \\ z_{k+1}\end{pmatrix} = \begin{pmatrix}y_k \\ z_k\end{pmatrix} + \frac{\Delta t}{2}\begin{pmatrix}z_k + z_{k+1} \\ y_k + y_{k+1}\end{pmatrix}
+\end{equation}
+This is a system of two equations for two unknowns \(y_{k+1}\) and \(z_{k+1}\).  Solving it produces the following explicit formulas for the unknowns:
+\begin{equation} \label{eq:trapezoidal_method_explicit}
+\begin{split}
+& z_{k+1} = \frac{2y_k + z_k(\frac{2}{\Delta t} + \frac{\Delta t}{2})}{\frac{2}{\Delta t} + \frac{\Delta t}{2}} \\
+& y_{k+1} = y_k + \frac{\Delta t}{2}(z_k + z_{k+1})
+\end{split}
+\end{equation}
+I implemented the trapezoidal method in the following Python function which uses the explicit formulas in \ref{eq:trapezoidal_method_explicit}. Note that this is not a generalized function and it only works on this specific IVP (\ref{eq:trapezoidal_ivp}).
+\begin{verbatim}
+def trapezoidal_method_for_2_a(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])  # vector valued [y z]
+    x[:, 0] = x0
+    y = x[0, :]
+    z = x[1, :]
+
+    # Constants
+    A = (2 / dt) + (dt / 2)
+    B = (2 / dt) - (dt / 2)
+
+    for k in range(len(t) - 1):
+        z[k + 1] = (2 * y[k] + A * z[k]) / B
+        y[k + 1] = y[k] + (dt / 2) * (z[k] + z[k + 1])
+
+    return t, x
+\end{verbatim}
+I verified that this function approximates the true solution by plotting the approximate solution vs. the true solution for \(\Delta t = 0.1\) and \(\Delta t = 0.01\).  The results are shown in Figure \ref{fig:trapezoidal-approx}.  It is clear that the approximate solution tracks the true solution, which gives confidence that the implementation is correct.
+\begin{figure}[H]
+	\centering
+	\includegraphics{Trapezoidal-method-true-vs-approx}
+	\caption{}
+	\label{fig:trapezoidal-approx}
+\end{figure}
+\subsection{Order of accuracy} \label{section:trapezoidal-accuracy}
+To determine the order of accuracy of the trapezoidal method, I followed the same approach as described in homework 1. The trapezoidal method was evaluated using multiple values of $\Delta t$ which decrease exponentially.  For each value of $\Delta t$, the global error $E_N$ was calculated.  We expect the global error to vary along with $\Delta t$.  For a first order method, an order of magnitude decrease in $\Delta t$ should result in an order of magnitude decrease in $E_N$.  For a second order method, an order of magnitude decrease in $\Delta t$ should result in two order of magnitude decreases in $E_N$.  And so forth.  The most intuitive way to visualize this is with a log-log plot of the global error vs $\Delta t$.  The slope of the plot is roughly equal to the order of the method.  Figure \ref{fig:trapezoidal-global-error} shows the results for the trapezoidal method.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Trapezoidal-global-error}
+	\caption{}
+	\label{fig:trapezoidal-global-error}
+\end{figure}
+From Figure \ref{fig:trapezoidal-global-error}, we conclude that the trapezoidal method is a \textbf{second order} method.
+\section{Midpoint method}
+The midpoint method is given by the formula
+\begin{equation} \label{eq:midpoint_method}
+\bm{x}_{k+1} = \bm{x}_{k-1} + 2{\Delta t}f(t_k,\bm{x}_k)
+\end{equation}
+To determine the order of accuracy of the midpoint method, we will analyze the following IVP, which has the true solution \begin{math}
+x(t) = cos(t)\end{math}. \begin{equation} \label{eq:midpoint_ivp}
+x'' + x = 0\ \textrm{with}\ x(0) = 1\  \textrm{and}\ x'(0) = 0
+\end{equation}
+Similarly to the IVP used with the trapezoidal method, this is a second order ODE, but (similarly to the trapezoidal method) the midpoint method only works on first order ODEs.  We need to re-write (\ref{eq:midpoint_ivp}) as a system of first order ODEs. Let \(y = x\) and \(z = x'\). Then it follows that
+\begin{equation}
+\begin{split}
+& y' = x' = z \\
+& z' = x'' = -x = -y
+\end{split}
+\end{equation}
+Therefore we have the first-order system
+\begin{equation}
+\bm{x}' = f(t, \bm{x})\ \textrm{where}\ \bm{x} = \begin{pmatrix}y \\ z\end{pmatrix}\ \textrm{and}\ f(t,\bm{x}) = \begin{pmatrix}z \\ -y\end{pmatrix}
+\end{equation}
+For this IVP (\ref{eq:midpoint_ivp}), the midpoint method (\ref{eq:midpoint_method}) is written in vector form as
+\begin{equation} \label{eq:midpoint_method_vector_form}
+\begin{pmatrix}y_{k+1} \\ z_{k+1}\end{pmatrix} = \begin{pmatrix}y_{k-1} + 2{\Delta t}z_k \\ z_{k-1} - 2{\Delta t}y_k\end{pmatrix}
+\end{equation}
+This is an explicit formula for the unknowns $y_{k+1}$ and $z_{k+1}$. The only caveat is when $k = 0$.  In this case we know $y_0$ and $z_0$ (ie. from the initial condition), but $y_{-1}$ and $z_{-1}$ are not valid.  Per the instructions in the homework, I used the forward Euler method to calculate $y_1$ and $z_1$. My Python function for the midpoint method is below.  Note that this is not a generalized function and it only works on this specific IVP (\ref{eq:midpoint_ivp}).
+\begin{verbatim}
+def midpoint_method_for_2_c(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])
+    x[:, 0] = x0
+
+    y = x[0, :]
+    z = x[1, :]
+
+    # Use Forward Euler to calculate x[1]
+    y[1] = y[0] + dt * z[0]
+    z[1] = z[0] - dt * y[0]
+
+    # Use Midpoint Method to calculate the rest
+    for k in range(1, len(t) - 1):
+        y[k + 1] = y[k - 1] + 2 * dt * z[k]
+        z[k + 1] = z[k - 1] - 2 * dt * y[k]
+
+    return t, x
+\end{verbatim}
+The results of this function for \(\Delta t = 0.1\) and \(\Delta t = 0.01\) are plotted in Figure \ref{fig:midpoint-approx}. It is clear that the approximate solution tracks the true solution, which gives confidence that the implementation is correct.
+\begin{figure}[H]
+	\centering
+	\includegraphics{Midpoint-method-true-vs-approx}
+	\caption{}
+	\label{fig:midpoint-approx}
+\end{figure}
+\subsection{Order of accuracy}
+I used the same approach described in Section \ref{section:trapezoidal-accuracy} to determine the order of accuracy of the midpoint method.  Namely, I calculated the global error for several values of $\Delta t$ and derived the order of accuracy from the log-log plot of $\Delta t$ vs $E_N$. Figure \ref{fig:midpoint-global-error} shows this plot and the linear best-fit.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Midpoint-global-error}
+	\caption{}
+	\label{fig:midpoint-global-error}
+\end{figure}
+From Figure \ref{fig:midpoint-global-error}, we conclude that the midpoint method is a \textbf{second order} method.
 \end{document}
