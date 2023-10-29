@@ -77,7 +77,11 @@ I verified that this function approximates the true solution by plotting the app
 	\caption{}
 	\label{fig:trapezoidal-approx}
 \end{figure}
+<<<<<<< HEAD
 \subsection{Order of accuracy} \label{section:trapezoidal-accuracy}
+=======
+\subsection{Order of accuracy}
+>>>>>>> cc189cd4beb7c4b6119b1d6aa6cc1e643f463254
 To determine the order of accuracy of the trapezoidal method, I followed the same approach as described in homework 1. The trapezoidal method was evaluated using multiple values of $\Delta t$ which decrease exponentially.  For each value of $\Delta t$, the global error $E_N$ was calculated.  We expect the global error to vary along with $\Delta t$.  For a first order method, an order of magnitude decrease in $\Delta t$ should result in an order of magnitude decrease in $E_N$.  For a second order method, an order of magnitude decrease in $\Delta t$ should result in two order of magnitude decreases in $E_N$.  And so forth.  The most intuitive way to visualize this is with a log-log plot of the global error vs $\Delta t$.  The slope of the plot is roughly equal to the order of the method.  Figure \ref{fig:trapezoidal-global-error} shows the results for the trapezoidal method.
 \begin{figure}[H]
 	\centering
@@ -148,4 +152,5 @@ I used the same approach described in Section \ref{section:trapezoidal-accuracy}
 	\label{fig:midpoint-global-error}
 \end{figure}
 From Figure \ref{fig:midpoint-global-error}, we conclude that the midpoint method is a \textbf{second order} method.
+
 \end{document}
