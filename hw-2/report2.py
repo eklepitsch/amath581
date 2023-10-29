@@ -5,7 +5,7 @@ from collections import namedtuple
 from math import ceil
 
 # Set to True to save the figures to .png files
-save_figures = False
+save_figures = True
 if save_figures:
     # Bump up the resolution (adds processing time)
     mpl.rcParams['figure.dpi'] = 900
@@ -173,8 +173,8 @@ for method in methods:
     ax2[0].legend()
 
     if save_figures:
-        fig1.savefig(f'{method.name.replace(" ", "-")}-true-vs-approx')
-        fig2.savefig(f'{method.name.replace(" ", "-")}-global-error')
+        fig1.savefig(f'images/{method.name.replace(" ", "-")}-true-vs-approx')
+        fig2.savefig(f'images/{method.name.replace(" ", "-")}-global-error')
 
 if not save_figures:
     plt.show()
