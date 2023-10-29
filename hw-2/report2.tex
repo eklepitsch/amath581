@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{bm}
 \graphicspath{ {./images/} }
@@ -17,7 +18,7 @@
 \begin{document}
 \maketitle
 \section{Overview}
-In this report I will determine the order of accuracy for the Trapezoidal and Midpoint methods for solving ODEs.  The order of accuracy will be determined by solving the IVPs given in Homework 2 using multiple values of $\Delta t$ and comparing the resulting solutions with the true solution. Then, I will provide a stability analysis for the Trapezoidal method to determine the range of eigenvalues for which the approximations generated using this method are stable.
+In this report I will determine the order of accuracy for the trapezoidal and midpoint methods for solving ODEs.  The order of accuracy will be determined by solving the IVPs given in Homework 2 using multiple values of $\Delta t$ and comparing the resulting solutions with the true solution. Then, I will provide a stability analysis for the trapezoidal method to determine when approximations generated using this method are stable.
 \section{Trapezoidal method}
 The trapezoidal method is given by the formula
 \begin{equation} \label{eq:trapezoidal_method}
@@ -36,7 +37,7 @@ This is a second order ODE, but the trapezoidal method only works on first order
 \end{split}
 \end{equation}
 Therefore we have the first-order system
-\begin{equation}
+\begin{equation} \label{eq:system-in-2ab}
 \bm{x}' = f(t, \bm{x})\ \textrm{where}\ \bm{x} = \begin{pmatrix}y \\ z\end{pmatrix}\ \textrm{and}\ f(t,\bm{x}) = \begin{pmatrix}z \\ y\end{pmatrix}
 \end{equation}
 For this IVP (\ref{eq:trapezoidal_ivp}), the trapezoidal method (\ref{eq:trapezoidal_method}) is written in vector form as
@@ -46,11 +47,11 @@ For this IVP (\ref{eq:trapezoidal_ivp}), the trapezoidal method (\ref{eq:trapezo
 This is a system of two equations for two unknowns \(y_{k+1}\) and \(z_{k+1}\).  Solving it produces the following explicit formulas for the unknowns:
 \begin{equation} \label{eq:trapezoidal_method_explicit}
 \begin{split}
-& z_{k+1} = \frac{2y_k + z_k(\frac{2}{\Delta t} + \frac{\Delta t}{2})}{\frac{2}{\Delta t} + \frac{\Delta t}{2}} \\
+& z_{k+1} = \frac{2y_k + z_k(\frac{2}{\Delta t} + \frac{\Delta t}{2})}{\frac{2}{\Delta t} - \frac{\Delta t}{2}} \\
 & y_{k+1} = y_k + \frac{\Delta t}{2}(z_k + z_{k+1})
 \end{split}
 \end{equation}
-I implemented the trapezoidal method in the following Python function which uses the explicit formulas in \ref{eq:trapezoidal_method_explicit}. Note that this is not a generalized function and it only works on this specific IVP (\ref{eq:trapezoidal_ivp}).
+I implemented the trapezoidal method in the following Python function which uses the explicit formulas in (\ref{eq:trapezoidal_method_explicit}). Note that this is not a generalized function and it only works on this specific ODE (\ref{eq:trapezoidal_ivp}).
 \begin{verbatim}
 def trapezoidal_method_for_2_a(t0, tN, x0, dt):
     """x0: vector [y z]"""
@@ -77,12 +78,8 @@ I verified that this function approximates the true solution by plotting the app
 	\caption{}
 	\label{fig:trapezoidal-approx}
 \end{figure}
-<<<<<<< HEAD
 \subsection{Order of accuracy} \label{section:trapezoidal-accuracy}
-=======
-\subsection{Order of accuracy}
->>>>>>> cc189cd4beb7c4b6119b1d6aa6cc1e643f463254
-To determine the order of accuracy of the trapezoidal method, I followed the same approach as described in homework 1. The trapezoidal method was evaluated using multiple values of $\Delta t$ which decrease exponentially.  For each value of $\Delta t$, the global error $E_N$ was calculated.  We expect the global error to vary along with $\Delta t$.  For a first order method, an order of magnitude decrease in $\Delta t$ should result in an order of magnitude decrease in $E_N$.  For a second order method, an order of magnitude decrease in $\Delta t$ should result in two order of magnitude decreases in $E_N$.  And so forth.  The most intuitive way to visualize this is with a log-log plot of the global error vs $\Delta t$.  The slope of the plot is roughly equal to the order of the method.  Figure \ref{fig:trapezoidal-global-error} shows the results for the trapezoidal method.
+To determine the order of accuracy of the trapezoidal method, I followed the same approach as described in Homework 1. The trapezoidal method was evaluated using multiple values of $\Delta t$ which decrease exponentially.  For each value of $\Delta t$, the global error $E_N$ was calculated.  We expect the global error to vary along with $\Delta t$.  For a first order method, an order of magnitude decrease in $\Delta t$ should result in an order of magnitude decrease in $E_N$.  For a second order method, an order of magnitude decrease in $\Delta t$ should result in two orders of magnitude decrease in $E_N$.  And so forth.  The most intuitive way to visualize this is with a log-log plot of the global error vs $\Delta t$.  The slope of the plot is roughly equal to the order of the method.  Figure \ref{fig:trapezoidal-global-error} shows the results for the trapezoidal method.
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=1\textwidth]{Trapezoidal-global-error}
@@ -99,7 +96,7 @@ To determine the order of accuracy of the midpoint method, we will analyze the f
 x(t) = cos(t)\end{math}. \begin{equation} \label{eq:midpoint_ivp}
 x'' + x = 0\ \textrm{with}\ x(0) = 1\  \textrm{and}\ x'(0) = 0
 \end{equation}
-Similarly to the IVP used with the trapezoidal method, this is a second order ODE, but (similarly to the trapezoidal method) the midpoint method only works on first order ODEs.  We need to re-write (\ref{eq:midpoint_ivp}) as a system of first order ODEs. Let \(y = x\) and \(z = x'\). Then it follows that
+This is a second order ODE, but similarly to the trapezoidal method, the midpoint method only works on first order ODEs.  We need to re-write (\ref{eq:midpoint_ivp}) as a system of first order ODEs. Let \(y = x\) and \(z = x'\). Then it follows that
 \begin{equation}
 \begin{split}
 & y' = x' = z \\
@@ -114,7 +111,7 @@ For this IVP (\ref{eq:midpoint_ivp}), the midpoint method (\ref{eq:midpoint_meth
 \begin{equation} \label{eq:midpoint_method_vector_form}
 \begin{pmatrix}y_{k+1} \\ z_{k+1}\end{pmatrix} = \begin{pmatrix}y_{k-1} + 2{\Delta t}z_k \\ z_{k-1} - 2{\Delta t}y_k\end{pmatrix}
 \end{equation}
-This is an explicit formula for the unknowns $y_{k+1}$ and $z_{k+1}$. The only caveat is when $k = 0$.  In this case we know $y_0$ and $z_0$ (ie. from the initial condition), but $y_{-1}$ and $z_{-1}$ are not valid.  Per the instructions in the homework, I used the forward Euler method to calculate $y_1$ and $z_1$. My Python function for the midpoint method is below.  Note that this is not a generalized function and it only works on this specific IVP (\ref{eq:midpoint_ivp}).
+This is an explicit formula for the unknowns $y_{k+1}$ and $z_{k+1}$. The only caveat is when $k = 0$.  In this case we know $y_0$ and $z_0$ (ie. from the initial condition), but $y_{-1}$ and $z_{-1}$ are not valid.  Per the instructions in the homework, I used the forward Euler method to calculate $y_1$ and $z_1$. My Python function for the midpoint method is below.  Note that this is not a generalized function and it only works on this specific ODE (\ref{eq:midpoint_ivp}).
 \begin{verbatim}
 def midpoint_method_for_2_c(t0, tN, x0, dt):
     """x0: vector [y z]"""
@@ -152,5 +149,343 @@ I used the same approach described in Section \ref{section:trapezoidal-accuracy}
 	\label{fig:midpoint-global-error}
 \end{figure}
 From Figure \ref{fig:midpoint-global-error}, we conclude that the midpoint method is a \textbf{second order} method.
+\section{Stability region}
+In this section, I will examine the stability of the trapezoidal method (\ref{eq:trapezoidal_method}).
 
+The stability analysis begins by considering the test problem $x' = \lambda x$, where $\lambda$ is a complex constant ($\lambda \in \mathbb{C}$).  Our test problem is
+\begin{equation} \label{eq:test-problem}
+x' = f(t, x) = \lambda x
+\end{equation}
+Plugging in $f(t, x) = \lambda x$ into (\ref{eq:trapezoidal_method}), we get
+\begin{equation}
+\begin{split}
+x_{k+1} & = x_k + \frac{\Delta t}{2}(\lambda x_k + \lambda x_{k+1}) \\
+& = x_k + \frac{\lambda \Delta t}{2}x_k + \frac{\lambda \Delta t}{2}x_{k+1} \\
+x_{k+1}(1 - \frac{\lambda \Delta t}{2}) & = x_k(1 + \frac{\lambda \Delta t}{2}) \\
+x_{k+1} &= x_k(\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t})
+\end{split}
+\end{equation}
+Starting with $x_0$, we have
+\begin{equation}
+\begin{split}
+x_0 & = known \\
+x_1 & = x_0(\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t}) \\
+x_2 & = x_1(\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t})  = x_0(\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t})^2 \\
+& \vdots \\
+x_N & = x_0(\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t})^N
+\end{split}
+\end{equation}
+As $N \rightarrow \infty$, the approximation $x_N$ goes to zero if $|\frac{2 + \lambda \Delta t}{2 - \lambda \Delta t}| < 1$. This provides the information we need to determine the region in which the trapezoidal method is stable. We defined $\lambda$ to be a complex number and $\Delta t$ must be purely real.  Therefore, we can define a complex number $z = \lambda \Delta t$.  \textbf{The stability criterion for the trapezoidal method is then given by}
+\begin{equation} \label{eq:stability-criteria}
+\left|\frac{2 + z}{2 - z} \right| < 1
+\end{equation}
+To determine the region in the complex plane where the stability criterion (\ref{eq:stability-criteria}) is satisfied, we can break down $z$ into its real and imaginary parts, ie. $z = a + ib$.  Then we have
+\begin{equation}
+\begin{split}
+\left|\frac{2 + a + ib}{2 - a - ib} \right| & < 1 \\
+\left|2 + a + ib\right| & < \left|2 - a - ib\right|
+\end{split}
+\end{equation}
+Now evaluate the magnitudes and square both sides:
+\begin{equation}
+\begin{split}
+\sqrt{(2 + a)^2 + b^2} & < \sqrt{(2 - a)^2 + b ^2} \\
+(2 + a)^2 + b^2 & < (2 - a)^2 + b ^2
+\end{split}
+\end{equation}
+And simplify further...
+\begin{equation}
+\begin{split}
+4 + 4a + a^2 + b^2 & < 4 - 4a + a^2 + b^2 \\
+4a & < -4a \\
+a & < 0
+\end{split}
+\end{equation}
+Therefore \textbf{the trapezoidal method is stable when} $a =\operatorname{Re}(\lambda)$ \textbf{is less than zero.}  The stability region is plotted in Figure \ref{fig:stability-plot}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Trapezoidal-stability-region}
+	\caption{}
+	\label{fig:stability-plot}
+\end{figure}
+\subsection{Stability analysis for problems 2a and 2b}
+In general, the stability analysis from the test problem (\ref{eq:test-problem}) applies to linear systems of ODEs
+\begin{equation}
+\bm{x'} = f(t, \bm{x}) = \bm{A}\bm{x}
+\end{equation}
+For linear systems, the numerical method is stable when each eigenvalue $\lambda$ of the matrix $\bm{A}$ satisfies the stability criterion.
+
+In homework problems 2a and 2b we had the system given in (\ref{eq:system-in-2ab}).  This system is written in matrix form as
+\begin{equation}
+\bm{x}' = \begin{pmatrix}y' \\ z'\end{pmatrix} = \underbrace{\begin{pmatrix}0 & 1 \\ 1 & 0\end{pmatrix}}_\text{A}\begin{pmatrix}y \\ z\end{pmatrix}
+\end{equation}
+The matrix $\bm{A}$ has characteristic equation $\lambda^2 - 1 = 0$, and therefore the eigenvalues are $\lambda_1 = -1$ and $\lambda_2 = 1$.  If we plot these eigenvalues on Figure \ref{fig:stability-plot}, we see that $\lambda_1 = -1$ lies in the stable region and $\lambda_2 = 1$ lies in the unstable region. \textbf{Since there is one eigenvalue in the unstable region, the trapezoidal method is unstable when applied to the IVP in problems 2a and 2b}. This result is in agreement with the approximations plotted in Figure \ref{fig:trapezoidal-approx}. The approximations grow without bound as time goes to infinity, which indicates instability.  However, instability is acceptable in this case because the true solution also grows without bound as time goes to infinity. In other words, the trapezoidal method correctly models the long-term behavior of the system.  Of course, the global error will become very large as $t \rightarrow \infty$, but because the long-term behavior of the approximation is correct the trapezoidal method is an acceptable method to use for this IVP given reasonable time scales.
+\section{Code}
+I used Python to generate the figures in this report.  The code is given below.  It was tested using Python 3.12.0.
+\begin{verbatim}
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from collections import namedtuple
+
+# Set to True to save the figures to .png files
+save_figures = False
+if save_figures:
+    # Bump up the resolution (adds processing time)
+    mpl.rcParams['figure.dpi'] = 900
+
+
+def float_formatter(x):
+    """
+    Specify the precision and notation (positional vs. scientific)
+    for floating point values.
+    """
+    p = 6
+    if abs(x) < 1e-4 or abs(x) > 1e4:
+        return np.format_float_scientific(x, precision=p)
+    else:
+        return np.format_float_positional(x, precision=p)
+
+
+def ge(t, true_solution, approx_solution):
+    """Global error"""
+    return abs(true_solution(t[-1]) - approx_solution[-1])
+
+
+def true_solution_a(t):
+    return (1 / 2) * (np.exp(t) + np.exp(-1 * t))
+
+
+def true_solution_c(t):
+    return np.cos(t)
+
+
+def trapezoidal_method(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])  # vector valued [y z]
+    x[:, 0] = x0
+    y = x[0, :]
+    z = x[1, :]
+
+    # Constants
+    A = (2 / dt) + (dt / 2)
+    B = (2 / dt) - (dt / 2)
+
+    for k in range(len(t) - 1):
+        z[k + 1] = (2 * y[k] + A * z[k]) / B
+        y[k + 1] = y[k] + (dt / 2) * (z[k] + z[k + 1])
+
+    return t, x
+
+
+def midpoint_method(t0, tN, x0, dt):
+    """x0: vector [y z]"""
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros([2, len(t)])
+    x[:, 0] = x0
+
+    y = x[0, :]
+    z = x[1, :]
+
+    # Use Forward Euler to calculate x[1]
+    y[1] = y[0] + dt * z[0]
+    z[1] = z[0] - dt * y[0]
+
+    # Use Midpoint Method to calculate the rest
+    for k in range(1, len(t) - 1):
+        y[k + 1] = y[k - 1] + 2 * dt * z[k]
+        z[k + 1] = z[k - 1] - 2 * dt * y[k]
+
+    return t, x
+
+# Trapezoidal method for dt = 0.1
+fig1, ax1 = plt.subplots(1, 2)
+fig1.suptitle('Trapezoidal method')
+
+t0 = 0
+tN = 1
+x0 = np.array([[1, 0]])
+dt = 0.1
+t, x = trapezoidal_method(t0, tN, x0, dt)
+
+ax1[0].plot(t, x[0, :], 'ro', label='Approx')
+ax1[0].plot(t, true_solution_a(t), label='True soln')
+ax1[0].set_title(rf'$\Delta t$ = {dt}')
+ax1[0].set_xlabel('Time')
+ax1[0].set_ylabel(rf'x(t)')
+ax1[0].legend()
+
+# Trapezoidal method for dt = 0.01
+dt = 0.01
+t, x = trapezoidal_method(t0, tN, x0, dt)
+
+ax1[1].plot(t, x[0, :], 'ro', label='Approx')
+ax1[1].plot(t, true_solution_a(t), label='True soln')
+ax1[1].set_title(rf'$\Delta t$ = {dt}')
+ax1[1].set_xlabel('Time')
+ax1[1].legend()
+
+if save_figures:
+    fig1.savefig('images/Trapezoidal-method-true-vs-approx')
+
+# Midpoint method for dt = 0.1
+fig2, ax2 = plt.subplots(1, 2)
+fig2.suptitle('Midpoint method')
+
+x0 = np.array([1, 0])
+t0 = 0
+tN = 1
+
+dt = 0.1
+t, x = midpoint_method(t0, tN, x0, dt)
+
+ax2[0].plot(t, x[0, :], 'ro', label='Approx')
+ax2[0].plot(t, np.cos(t), label='True soln')
+ax2[0].set_title(rf'$\Delta t$ = {dt}')
+ax2[0].set_xlabel('Time')
+ax2[0].set_ylabel(rf'x(t)')
+ax2[0].legend()
+
+# Midpoint method for dt = 0.01
+dt = 0.01
+t, x = midpoint_method(t0, tN, x0, dt)
+
+ax2[1].plot(t, x[0, :], 'ro', label='Approx')
+ax2[1].plot(t, np.cos(t), label='True soln')
+ax2[1].set_title(rf'$\Delta t$ = {dt}')
+ax2[1].set_xlabel('Time')
+ax2[1].legend()
+
+if save_figures:
+    fig2.savefig('images/Midpoint-method-true-vs-approx')
+
+# Do the trapezoidal and midpoint method using several other values of dt.
+# Then plot the log-log graph of dt vs. global error to determine the order
+# of each method.
+DeltaT = namedtuple('DeltaT', 'decimal str')
+delta_t = [DeltaT(pow(2, -5), r'$2^{-5}$'),
+           DeltaT(pow(2, -6), r'$2^{-6}$'),
+           DeltaT(pow(2, -7), r'$2^{-7}$'),
+           DeltaT(pow(2, -8), r'$2^{-8}$'),
+           DeltaT(pow(2, -9), r'$2^{-9}$'),
+           DeltaT(pow(2, -10), r'$2^{-10}$'),
+           DeltaT(pow(2, -11), r'$2^{-11}$'),
+           DeltaT(pow(2, -12), r'$2^{-12}$')]
+
+Method = namedtuple('Method', 'name fn soln')
+
+# Define the methods to use
+methods = [Method('Trapezoidal', trapezoidal_method, true_solution_a),
+           Method('Midpoint', midpoint_method, true_solution_c)]
+
+t0 = 0
+tN = 1
+x0 = np.array([[1, 0]])
+
+for method in methods:
+    # Fig3 is the plot of the true solution vs. the approximation
+    fig3, ax3 = plt.subplots(gridspec_kw={'left': 0.15})
+    ax3.set_title(f'Approximate solutions for {method.name} method')
+    ax3.set_xlabel('time')
+    ax3.set_ylabel('x(t)')
+
+    # Fig4 is the plot of the global error vs. delta t
+    fig4, ax4 = plt.subplots(nrows=1, ncols=2, width_ratios=[5, 3],
+                             gridspec_kw={
+                                 'left': 0.08,     # Left padding
+                                 'right': 0.96,    # Right padding
+                                 'wspace': 0.05})  # Space between axes
+    fig4.suptitle(f'Global error for {method.name} method')
+    fig4.set_figwidth(fig4.get_figwidth() * 1.5)    # Increase the width
+
+    # Column 0 = delta t, Column 1 = global error
+    global_err = np.zeros((len(delta_t), 2))
+
+    # For each delta t, approximate the solution using the given method
+    for i, dt in enumerate(delta_t):
+        t, approx = method.fn(t0, tN, x0, dt.decimal)
+
+        # Record delta t and global error (for plotting later)
+        global_err[i][0] = dt.decimal
+        global_err[i][1] = ge(t, method.soln, approx[0])
+
+        ax3.plot(t, approx[0], label=fr'$\Delta$t = {dt.str}')
+
+        # Plot true solution on last iteration
+        if i == len(delta_t) - 1:
+            ax3.plot(t, method.soln(t),
+                     label='true solution', linestyle=':', linewidth=4)
+
+        ax3.ticklabel_format(useOffset=False)
+
+    # Take the natural logarithm of delta t and the global error
+    dt = global_err[:, 0]
+    en = global_err[:, 1]
+    log_dt = np.log(dt)
+    log_en = np.log(en)
+
+    # Find the best fit line through ln(En)
+    [m, b] = np.polyfit(log_dt, log_en, 1)
+    best_fit_fn = np.poly1d([m, b])
+    best_fit_data = best_fit_fn(log_dt)
+
+    # Plot the data and best fit line
+    ax4[0].set_xlabel(r'ln($\Delta$t)')
+    ax4[0].set_ylabel(r'ln($E_N$)')
+    ax4[0].plot(log_dt, log_en, label='Actual error',
+                marker='o', markersize=6, linestyle='')
+    ax4[0].plot(log_dt, best_fit_data, label='Best fit')
+    ax4[0].text(np.mean(log_dt),
+                np.mean(best_fit_data) - np.ptp(best_fit_data) / 3,
+                f'Slope of best fit = {round(m, 5)}')
+
+    # Plot a table containing the En and ln(En) values
+    table_values = []
+    for dt, err, log_err in zip(delta_t, global_err[:, 1], log_en):
+        table_values.append([dt.str,
+                             float_formatter(err),
+                             float_formatter(log_err)])
+    table = plt.table(cellText=table_values,
+                      colLabels=[r'$\Delta$t', r'$E_N$', r'ln($E_N$)'],
+                      bbox=[0, 0 ,1 , 1])
+    ax4[1].add_table(table)
+    ax4[1].axis('off')
+
+    # Add legends to the plots
+    ax3.legend()
+    ax4[0].legend()
+
+    if save_figures:
+        fig3.savefig(f'images/{method.name.replace(" ", "-")}-true-vs-approx')
+        fig4.savefig(f'images/{method.name.replace(" ", "-")}-global-error')
+
+# Plot the stability region of the trapezoidal method in the complex plane
+fig5, ax5 = plt.subplots()
+fig5.suptitle('Stability region for trapezoidal method')
+ax5.axhline(y=0, color='k')
+ax5.axvline(x=0, color='k')
+ax5.set_xlim([-10, 10])
+ax5.set_ylim([-10, 10])
+ax5.set_xticks([-10, 0, 10])
+ax5.set_yticks([-10, 0, 10])
+ax5.set_xticklabels([rf'$-\infty$', 0, rf'$\infty$'])
+ax5.set_yticklabels([rf'$-\infty$', 0, rf'$\infty$'])
+ax5.set_xlabel(rf'Re($\lambda$)')
+ax5.set_ylabel(rf'Im($\lambda$)')
+ax5.fill_between(range(-10, 1), -10, 10,
+                 color='g', alpha=0.5, label='stable')
+ax5.fill_between(range(0, 11), -10, 10,
+                 color='r', alpha=0.5, label='unstable')
+ax5.spines['top'].set_visible(False)
+ax5.spines['right'].set_visible(False)
+ax5.spines['bottom'].set_visible(False)
+ax5.spines['left'].set_visible(False)
+ax5.legend()
+if save_figures:
+    fig5.savefig(f'images/Trapezoidal-stability-region')
+
+if not save_figures:
+    plt.show()
+\end{verbatim}
 \end{document}
