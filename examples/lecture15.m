@@ -1,0 +1,90 @@
+clear all; close all; clc;
+
+% u_xx + u_yy = 0
+% u(x, 0) = x^2 - x
+% All other boundaries are zero
+% u(x, 1) = u(0, y) = u(1, y) = 0
+
+x0 = 0;
+xN = 1;
+y0 = 0;
+yN = 1;
+
+N = 201
+x = linspace(x0, xN, N);
+y = linspace(x0, xN, N);
+dx = x(2) - x(1)
+
+% Boundary condition
+a = @(x)(x.^2 - x);
+
+tic
+% Set up system Au = b
+N_total = (N - 2) * (N - 2)
+entries_in_matrix = N_total^2
+
+% A = zeros(N_total);
+A = sparse(N_total, N_total);
+b = zeros(N_total, 1);
+
+point2ind = @(m, n)((n - 2) * (N - 2) + m - 1);
+
+for n = 2:N-1
+    for m = 2:N-1
+        k = point2ind(m, n);
+        A(k, k) = -4 / dx^2;
+        if m > 2
+            A(k, k - 1) = 1 / dx^2;
+        end
+        if n < N - 1
+            A(k, k + N - 2) = 1 / dx^2;
+        end
+        if m < N - 1
+            A(k, k + 1) = 1 / dx^2;
+        end
+        if n > 2
+            A(k, k - (N - 2)) = 1 / dx^2;
+        else
+            b(k) = b(k) - a(x(m)) / dx^2;
+        end
+    end
+end
+
+t1 = toc;
+fprintf("Time to set up matrix = %ds\n", t1)
+
+tic
+u = A\b;
+
+t2 = toc;
+fprintf("Time to solve = %ds\n", t2)
+fprintf("Total time = %ds\n", t1 + t2)
+
+U_int = reshape(u, [N-2, N-2]);
+% MATLAB stores data internally column-by-column instead of 
+% row-by-row (the way python and C do), but we chose to 
+% order our grid points row-by-row.  The following line 
+% switches rows and columns of U.
+U_int = permute(U_int, [2, 1]);
+U = zeros(N, N);
+U(2:N-1, 2:N-1) = U_int;
+U(1, :) = a(x);
+
+% These vectors are just to plot the boundary conditions
+zero_vector = zeros(size(x));
+one_vector = ones(size(x));
+
+[X, Y] = meshgrid(x, y);
+
+% Plot the solution
+surf(X, Y, U)
+hold on
+% u(0, y) = 0
+plot3(zero_vector, y, zero_vector, 'r')
+% u(x, 1) = 0
+plot3(x, one_vector, zero_vector, 'r')
+% u(1, y) = 0
+plot3(one_vector, y, zero_vector, 'r')
+% u(x, 0) = a(x)
+plot3(x, zero_vector, a(x), 'r')
+hold off
