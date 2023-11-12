@@ -1,6 +1,10 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from math import floor, ceil
+import numpy as np
+import scipy
+from math import floor
+from mpl_toolkits.mplot3d import Axes3D
+
+show_plots = False
 
 '''Problem 1
 y''(t) + 0.1 y'(t) + sin(y(t)) = 0
@@ -16,7 +20,7 @@ a) Start with an initial guess of all 0.5's.
 b) Start with an initial guess of
     y = 0.005t^4 - 0.07t^3 + 0.66t^2 - 2.56t + 0.55
 '''
-fig1, ax1 = plt.subplots(1, 2)
+fig0, ax0 = plt.subplots(1, 2)
 
 t0 = 0
 tN = 6
@@ -59,8 +63,7 @@ while np.max(np.abs(F(y))) >= 1e-8 and k < max_steps:
     k = k + 1
 
 y = y.reshape(N)
-print(f'Steps needed for 1a: {k}')
-ax1[0].plot(t, y, 'k', t0, y0, 'ro', tN, yN, 'ro')
+ax0[0].plot(t, y, 'k', t0, y0, 'ro', tN, yN, 'ro')
 
 A1 = y[np.where(t == 3)[0][0]]
 A2 = np.max(y)
@@ -78,8 +81,6 @@ while np.max(np.abs(F(y))) >= 1e-8 and k < max_steps:
     y = y - dy
     k = k + 1
 
-print(f'Steps needed for 1b: {k}')
-
 y = y.reshape(N)
 A4 = y[np.where(t == 3)[0][0]]
 A5 = np.max(y)
@@ -88,6 +89,158 @@ print(f'A4: {A4}')
 print(f'A5: {A5}')
 print(f'A6: {A6}')
 
-ax1[1].plot(t, y, 'k', t0, y0, 'ro', tN, yN, 'ro')
+ax0[1].plot(t, y, 'k', t0, y0, 'ro', tN, yN, 'ro')
 
-plt.show()
+if show_plots:
+    fig0.show()
+
+
+'''Problem 2
+u_xx + u_yy = 0, 0 < x < 3, 0 < y < 3
+
+BCs:
+u(x, 0) = x^2 - 3x
+u(x, 3) = sin(2*pi*x/3)
+u(0, y) = sin(pi*y/3)
+u(3, y) = 3y - y^2
+
+Solve using the direct method and a 5-point Laplacian.  May need to use sparse
+matrices to avoid running out of memory.
+
+a) Use dx = dy = 0.05
+b) Use dx = dy = 0.015
+'''
+
+x0 = 0
+xN = 3
+y0 = 0
+yN = 3
+
+
+# Boundary condition u(x, 0)
+def a(x):
+    return x ** 2 - 3 * x
+
+
+# Boundary condition u(x, 3)
+def b(x):
+    return np.sin(2 * np.pi * x / 3)
+
+
+# Boundary condition u(0, y)
+def c(y):
+    return np.sin(np.pi * y / 3)
+
+
+# Boundary condition u(3, y)
+def d(y):
+    return 3 * y - y ** 2
+
+
+def solve_laplace_eqn(dx, sparse=True):
+    dy = dx
+    N = floor((xN - x0) / dx) + 1
+    N_total = (N - 2) * (N - 2)  # Only interior points matter
+    x = np.linspace(x0, xN, N)
+    y = np.linspace(y0, yN, N)
+
+    if sparse:
+        A = scipy.sparse.dok_array((N_total, N_total))
+    else:
+        A = np.zeros((N_total, N_total))
+
+    B = np.zeros((N_total, 1))
+
+    def get_index(m, n):
+        return (n - 1) * (N - 2) + m - 1
+
+    for n in range(1, N - 1):
+        for m in range (1, N - 1):
+            k = get_index(m, n)
+            A[k, k] = -4 / dx ** 2
+            if m > 1:
+                A[k, k - 1] = 1 / dx ** 2
+            if n < N - 2:
+                A[k, k + N - 2] = 1 / dx ** 2
+            if m < N - 2:
+                A[k, k + 1] = 1 / dx ** 2
+            if n > 1:
+                A[k, k - (N - 2)] = 1 / dx ** 2
+            if n == 1:
+                B[k] = B[k] - a(x[m]) / dx ** 2
+            if n == N - 2:
+                B[k] = B[k] - b(x[m]) / dx ** 2
+            if m == 1:
+                B[k] = B[k] - c(y[n]) / dx ** 2
+            if m == N - 2:
+                B[k] = B[k] - d(y[n]) / dx ** 2
+
+    if sparse:
+        A = A.tocsc()
+        u_interior = scipy.sparse.linalg.spsolve(A, B).reshape((N - 2, N - 2))
+    else:
+        u_interior = np.linalg.solve(A, B).reshape((N - 2, N - 2))
+
+    U = np.zeros((N, N))
+    U[1:(N - 1), 1:(N - 1)] = u_interior
+    U[0, :] = a(x)
+    U[N - 1, :] = b(x)
+    U[:, 0] = c(y)
+    U[:, N - 1] = d(y)
+
+    return U, x, y
+
+
+# Part (a)
+U, x, y = solve_laplace_eqn(dx=0.05)
+A7 = U[np.where(x == 1)[0][0], np.where(y == 1)[0][0]]
+A8 = U[np.where(x == 2)[0][0], np.where(y == 2)[0][0]]
+print(f'A7: {A7}')
+print(f'A8: {A8}')
+
+if show_plots:
+    fig1, ax1 = plt.subplots(1, 1)
+    X, Y = np.meshgrid(x, y)
+    ax1 = plt.axes(projection='3d')
+    ax1.plot_surface(X, Y, U)
+
+    zero_vector = np.zeros_like(x)
+    n_vector = xN * np.ones_like(x)
+    # u(x, 0)
+    ax1.plot3D(x, zero_vector, a(x), 'r')
+    # u(x, 3)
+    ax1.plot3D(x, n_vector, b(x), 'r')
+    # u(0, y)
+    ax1.plot3D(zero_vector, y, c(y), 'r')
+    # u(3, y)
+    ax1.plot3D(n_vector, y, d(y), 'r')
+
+    fig1.show()
+
+# Part (b)
+U, x, y = solve_laplace_eqn(dx=0.015)
+A9 = U[np.where(np.isclose(x, 1.005))[0][0],
+np.where(np.isclose(y, 1.005))[0][0]]
+A10 = U[np.where(np.isclose(x, 1.995))[0][0],
+np.where(np.isclose(y, 1.995))[0][0]]
+print(f'A9: {A9}')
+print(f'A10: {A10}')
+
+if show_plots:
+    fig2, ax2 = plt.subplots(1, 1)
+    X, Y = np.meshgrid(x, y)
+    ax2 = plt.axes(projection='3d')
+    ax2.plot_surface(X, Y, U)
+
+    zero_vector = np.zeros_like(x)
+    n_vector = xN * np.ones_like(x)
+    # u(x, 0)
+    ax2.plot3D(x, zero_vector, a(x), 'r')
+    # u(x, 3)
+    ax2.plot3D(x, n_vector, b(x), 'r')
+    # u(0, y)
+    ax2.plot3D(zero_vector, y, c(y), 'r')
+    # u(3, y)
+    ax2.plot3D(n_vector, y, d(y), 'r')
+
+    fig2.show()
