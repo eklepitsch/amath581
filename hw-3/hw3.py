@@ -192,37 +192,19 @@ def solve_laplace_eqn(dx, sparse=True):
 
 
 # Part (a)
-U, x, y = solve_laplace_eqn(dx=0.05)
-A7 = U[np.where(x == 1)[0][0], np.where(y == 1)[0][0]]
-A8 = U[np.where(x == 2)[0][0], np.where(y == 2)[0][0]]
+U, x, y = solve_laplace_eqn(dx=0.05, sparse=True)
+# In U, the y-index is the row and the x-index is the column.
+A7 = U[np.where(y == 1)[0][0], np.where(x == 1)[0][0]]
+A8 = U[np.where(y == 2)[0][0], np.where(x == 2)[0][0]]
 print(f'A7: {A7}')
 print(f'A8: {A8}')
 
-if show_plots:
-    fig1, ax1 = plt.subplots(1, 1)
-    X, Y = np.meshgrid(x, y)
-    ax1 = plt.axes(projection='3d')
-    ax1.plot_surface(X, Y, U)
-
-    zero_vector = np.zeros_like(x)
-    n_vector = xN * np.ones_like(x)
-    # u(x, 0)
-    ax1.plot3D(x, zero_vector, a(x), 'r')
-    # u(x, 3)
-    ax1.plot3D(x, n_vector, b(x), 'r')
-    # u(0, y)
-    ax1.plot3D(zero_vector, y, c(y), 'r')
-    # u(3, y)
-    ax1.plot3D(n_vector, y, d(y), 'r')
-
-    fig1.show()
-
 # Part (b)
-U, x, y = solve_laplace_eqn(dx=0.015)
-A9 = U[np.where(np.isclose(x, 1.005))[0][0],
-np.where(np.isclose(y, 1.005))[0][0]]
-A10 = U[np.where(np.isclose(x, 1.995))[0][0],
-np.where(np.isclose(y, 1.995))[0][0]]
+U, x, y = solve_laplace_eqn(dx=0.015, sparse=True)
+A9 = U[np.where(np.isclose(y, 1.005))[0][0],
+       np.where(np.isclose(x, 1.005))[0][0]]
+A10 = U[np.where(np.isclose(y, 1.995))[0][0],
+        np.where(np.isclose(x, 1.995))[0][0]]
 print(f'A9: {A9}')
 print(f'A10: {A10}')
 
@@ -244,3 +226,118 @@ if show_plots:
     ax2.plot3D(n_vector, y, d(y), 'r')
 
     fig2.show()
+
+
+'''Problem 3
+u_xx + u_yy = -e^(-2 * (x^2 + y^2)), -1 < x < 1, -1 < y < 1
+
+BCs:
+u(x, 1) = (x^3 - x)/3
+u(x, -1) = 0
+u(-1, y) = 0
+u(1, y) = 0
+
+Solve using the direct method and a 5-point Laplacian.
+
+a) Use dx = 0.1 and dy = 0.05
+b) Use dx = 0.01 and dy = 0.025
+'''
+
+xi = -1
+xf = 1
+yi = -1
+yf = 1
+
+
+# Boundary condition u(x, 1)
+def a(x):
+    return (x ** 3 - x) / 3
+
+
+# Nonhomogeneous term
+def f(x, y):
+    return -1 * np.exp(-2 * (x ** 2 + y ** 2))
+
+
+def solve_laplace_eqn(dx, dy, sparse=True):
+    Nx = floor((xf - xi) / dx) + 1
+    Ny = floor((yf - yi) / dy) + 1
+    N_total = (Nx - 2) * (Ny - 2)  # One eqn for each interior point
+    x = np.linspace(xi, xf, Nx)
+    y = np.linspace(yi, yf, Ny)
+    U = np.zeros((Ny, Nx))
+
+    if sparse:
+        A = scipy.sparse.dok_array((N_total, N_total))
+    else:
+        A = np.zeros((N_total, N_total))
+
+    B = np.zeros((N_total, 1))
+
+    def get_index(m, n):
+        return (n - 1) * (Nx - 2) + m - 1
+
+    for n in range(1, Ny - 1):
+        for m in range(1, Nx - 1):
+            k = get_index(m, n)
+            A[k, k] = -2 * ((1 / dx ** 2) + (1 / dy ** 2))
+            if m > 1:
+                A[k, k - 1] = 1 / dx ** 2
+            if n < Ny - 2:
+                A[k, k + Nx - 2] = 1 / dy ** 2
+            if m < Nx - 2:
+                A[k, k + 1] = 1 / dx ** 2
+            if n > 1:
+                A[k, k - (Nx - 2)] = 1 / dy ** 2
+            if n == Ny - 2:
+                B[k] = f(x[m], y[n]) - a(x[m]) / dy ** 2
+            else:
+                B[k] = f(x[m], y[n])
+
+    if sparse:
+        A = A.tocsc()
+        u_interior = scipy.sparse.linalg.spsolve(A, B).reshape((Ny - 2, Nx - 2))
+    else:
+        u_interior = np.linalg.solve(A, B).reshape((Ny - 2, Nx - 2))
+
+    U[1:(Ny - 1), 1:(Nx - 1)] = u_interior
+    U[-1, :] = a(x)
+
+    return U, x, y
+
+
+U, x, y = solve_laplace_eqn(dx=0.1, dy=0.05, sparse=True)
+A11 = U[np.where(y == 0)[0][0], np.where(x == 0)[0][0]]
+A12 = U[np.where(np.isclose(y, 0.5))[0][0],
+np.where(np.isclose(x, -0.5))[0][0]]
+print(f'A11: {A11}')
+print(f'A12: {A12}')
+
+U, x, y = solve_laplace_eqn(dx=0.01, dy=0.025, sparse=True)
+A13 = U[np.where(y == 0)[0][0], np.where(x == 0)[0][0]]
+A14 = U[np.where(np.isclose(y, 0.5))[0][0],
+np.where(np.isclose(x, -0.5))[0][0]]
+print(f'A13: {A13}')
+print(f'A14: {A14}')
+
+if show_plots:
+    fig3 = plt.figure()
+    ax3 = fig3.add_subplot(1, 1, 1, projection='3d')
+    X, Y = np.meshgrid(x, y)
+    ax3.plot_surface(X, Y, U)
+
+    nones_vector_x = -1 * np.ones_like(x)
+    ones_vector_x = np.ones_like(x)
+    nones_vector_y = -1 * np.ones_like(y)
+    ones_vector_y = np.ones_like(y)
+    # u(x, -1)
+    ax3.plot3D(x, -1 * np.ones_like(x), 0, 'r')
+    # u(x, 1)
+    ax3.plot3D(x, np.ones_like(x), a(x), 'r')
+    # u(-1, y)
+    ax3.plot3D(-1 * np.ones_like(y), y, 0, 'r')
+    # u(1, y)
+    ax3.plot3D(np.ones_like(y), y, 0, 'r')
+    ax3.view_init(-135, 30)
+
+    fig3.show()
