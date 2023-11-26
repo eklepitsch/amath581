@@ -4,6 +4,8 @@ from math import floor
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+show_plots = False
+
 '''Problem 1
 Heat equation
 u_t = 5 * u_xx
@@ -89,7 +91,8 @@ def plot_solution(t, x, U):
     # t = np.where(t == 0.1)[0][0]
     # ax.plot3D(0.1, 0.5, U[x, t], 'rp', markersize=5)
 
-    plt.show()
+    if show_plots:
+        plt.show()
 
 
 def get_error(t, x, U, true_soln):
@@ -253,3 +256,130 @@ print(f'A16: {A16}')
 # ax = plt.axes(projection='3d')
 # ax.plot_surface(T, X, true_solution_2(T, X))
 # plt.show()
+
+
+'''Problem 3
+2-dimensional heat equation:
+u_t = K(u_xx + u_yy)
+
+BCs:
+u(t, 0, y) = u(t, 1, y) = 0
+u(t, x, 0) = u(t, x, 1) = 0
+
+IC:
+u(0, x, y) = e^(-10((x - 0.5)^2 + (y - 0.5)^2)), 0 < x,y < 1
+u(0, x, y) = 0, on the boundary of the unit square
+
+For all parts, use K = 0.1 (diffusion coefficient), dx = 0.1, dy = 0.1. Solve
+from t = 0 to t = 1.
+
+a) Solve using Forward Euler with dt = 1/3.
+b) Solve using Forward Euler with dt = 0.01.
+c) Solve using trapezoidal method using dt = 1/3.
+d) Solve using trapezoidal method using dt = 0.01.
+'''
+
+x0 = 0
+xN = 1
+y0 = 0
+yN = 1
+t0 = 0
+tN = 1
+K = 0.1
+
+dx = 0.1
+dy = 0.1
+
+
+def bc_3():
+    return 0
+
+
+def ic_3(x, y):
+    return np.exp(-10 * ((x - 0.5) ** 2 + (y - 0.5) ** 2))
+
+
+N = Nx = Ny = floor((xN - x0) / dx) + 1
+N_interior = (N - 2) ** 2
+x = np.linspace(x0, xN, N)
+y = np.linspace(y0, yN, N)
+X, Y = np.meshgrid(x, y)
+
+
+def method_of_lines_3(t, ic, method='forward_euler'):
+    A = np.zeros((N_interior, N_interior))
+    U = np.zeros((N, N, len(t)))
+
+    # Initial condition
+    U[:, :, 0] = ic(X, Y)
+    # ax = plt.axes(projection='3d')
+    # ax.plot_surface(X, Y, U[:, :, 0])
+    # plt.show()
+
+    def get_index(m, n):
+        return m - 1 + (N - 2) * (n - 1)
+
+    # Set up the coefficient matrix A
+    for m in range(1, N - 1):
+        for n in range(1, N - 1):
+            k = get_index(m, n)
+            A[k, k] = -1 * (2 / dx ** 2 + 2 / dy ** 2)
+            if m > 1:
+                A[k, k - 1] = 1 / dx ** 2
+            if n < N - 2:
+                A[k, k + N - 2] = 1 / dy ** 2
+            if m < N - 2:
+                A[k, k + 1] = 1 / dx ** 2
+            if n > 1:
+                A[k, k - (N - 2)] = 1 / dy ** 2
+
+    for k in range(len(t) - 1):
+        if method == 'forward_euler':
+            U[1:-1, 1:-1, (k + 1):(k + 2)] = (U[1:-1, 1:-1, k:(k + 1)] +
+                                              dt * K * (A @ U[1:-1, 1:-1, k:(k + 1)]
+                                                        .reshape((N - 2) ** 2, 1))
+                                              .reshape(N - 2, N - 2, 1))
+        elif method == 'trapezoidal':
+            M = dt * K / 2
+            U_this = U[1:-1, 1:-1, k:(k + 1)].copy()
+            U_this = U_this.reshape((N - 2) ** 2, 1)
+            U[1:-1, 1:-1, (k + 1):(k + 2)] = \
+                np.linalg.solve(np.eye((N - 2) ** 2) - M * A,
+                                U_this + M * A @ U_this).reshape(N - 2, N - 2, 1)
+
+        # if k % 20 == 0:
+        # ax = plt.axes(projection='3d')
+        # ax.plot_surface(X, Y, U[:, :, k + 1])
+        # plt.show()
+
+    return U
+
+
+# Part (a)
+dt, Nt, t = discretize_time(dt=1/3)
+U = method_of_lines_3(t, ic_3, method='forward_euler')
+A17 = U[np.where(x == 0.5)[0][0], np.where(y == 0.5)[0][0],
+np.where(t == 1)[0][0]]
+
+# Part (b)
+dt, Nt, t = discretize_time(dt=0.01)
+U = method_of_lines_3(t, ic_3, method='forward_euler')
+A18 = U[np.where(x == 0.5)[0][0], np.where(y == 0.5)[0][0],
+np.where(t == 1)[0][0]]
+
+# Part (c)
+dt, Nt, t = discretize_time(dt=1/3)
+U = method_of_lines_3(t, ic_3, method='trapezoidal')
+A19 = U[np.where(x == 0.5)[0][0], np.where(y == 0.5)[0][0],
+np.where(t == 1)[0][0]]
+
+# Part (d)
+dt, Nt, t = discretize_time(dt=0.01)
+U = method_of_lines_3(t, ic_3, method='trapezoidal')
+A20 = U[np.where(x == 0.5)[0][0], np.where(y == 0.5)[0][0],
+np.where(t == 1)[0][0]]
+
+print(f'A17: {A17}')
+print(f'A18: {A18}')
+print(f'A19: {A19}')
+print(f'A20: {A20}')
