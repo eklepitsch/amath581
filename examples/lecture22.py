@@ -24,7 +24,7 @@ print("dx = {}".format(dx))
 
 t0 = 0
 tf = 1
-Nt = 201
+Nt = 401
 t = np.linspace(t0, tf, Nt)
 dt = t[1] - t[0]
 print("Nt = {}".format(Nt))
