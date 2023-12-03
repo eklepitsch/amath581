@@ -4,7 +4,66 @@ from math import floor, ceil
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
-show_plots = True
+show_plots = False
+
+
+def do_method(A, U, t, Nx, Nt, plot_timestep, method='forward_euler',
+              submethod='trapezoidal'):
+    if method == 'forward_euler':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
+    elif method == 'backward_euler':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                np.linalg.solve(np.eye(Nx - 1) - dt * A, U[:-1, k:(k + 1)])
+    elif method == 'trapezoidal':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
+                                (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, k:(k + 1)])
+    elif method == 'midpoint':
+        # Use Trapezoidal as the first step
+        if submethod == 'trapezoidal':
+            U[:-1, 1:2] = \
+                np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
+                                (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, 0:1])
+        else:   # Forward Euler
+            U[:-1, 1:2] = U[:-1, 0:1] + dt * A @ U[:-1, 0:1]
+        for k in range(Nt - 2):
+            U[:-1, (k + 2):(k + 3)] = \
+                U[:-1, k:(k + 1)] + 2 * dt * A @ U[:-1, (k + 1):(k + 2)]
+    elif method == 'lax_friedrichs':
+        B = np.diag(np.ones(Nx - 2), 1) + np.diag(np.ones(Nx - 2), -1)
+        B[0, -1] = 1
+        B[-1, 0] = 1
+        B = 0.5 * B
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                B @ U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
+
+    U[-1, :] = U[0, :]
+
+    nrows = 2
+    ncols = 4
+    fig2, ax2 = plt.subplots(nrows, ncols)
+    fig2.suptitle(f'{method}, dt = {dt}')
+    time = 0
+    for p in range(nrows):
+        for q in range(ncols):
+            if time <= tf:
+                try:
+                    ax2[p][q].plot(x, U[:, np.where(t == time)[0][0]])
+                    ax2[p][q].set_title(f't = {time}')
+                except IndexError:
+                    pass
+                time += plot_timestep
+
+    if show_plots:
+        fig2.show()
+
+    return U
+
 
 '''Problem 1
 u_t = -3 * u_x
@@ -64,52 +123,7 @@ def solve_advection_eqn_1(dt, method='forward_euler'):
     U = np.zeros((Nx, Nt))
     U[:-1, 0] = [f1(k) for k in x[:-1]]
 
-    if method == 'forward_euler':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
-    elif method == 'backward_euler':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                np.linalg.solve(np.eye(Nx - 1) - dt * A, U[:-1, k:(k + 1)])
-    elif method == 'trapezoidal':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
-                                (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, k:(k + 1)])
-    elif method == 'midpoint':
-        # Use Trapezoidal as the first step
-        U[:-1, 1:2] = \
-            np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
-                            (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, 0:1])
-        for k in range(Nt - 2):
-            U[:-1, (k + 2):(k + 3)] = \
-                U[:-1, k:(k + 1)] + 2 * dt * A @ U[:-1, (k + 1):(k + 2)]
-    elif method == 'lax_friedrichs':
-        B = np.diag(np.ones(Nx - 2), 1) + np.diag(np.ones(Nx - 2), -1)
-        B[0, -1] = 1
-        B[-1, 0] = 1
-        B = 0.5 * B
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                B @ U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
-
-    U[-1, :] = U[0, :]
-
-    nrows = 2
-    ncols = 4
-    fig1, ax1 = plt.subplots(nrows, ncols)
-    fig1.suptitle(f'{method}, dt = {dt}')
-    time = 0
-    for p in range(nrows):
-        for q in range(ncols):
-            if time <= tf:
-                ax1[p][q].plot(x, U[:, np.where(t == time)[0][0]])
-                ax1[p][q].set_title(f't = {time}')
-                time += 0.5
-
-    if show_plots:
-        fig1.show()
+    U = do_method(A, U, t, Nx, Nt, 0.5, method=method)
 
     return U, t
 
@@ -208,52 +222,7 @@ def solve_advection_eqn_2(dt, method='backward_euler'):
     U = np.zeros((Nx, Nt))
     U[:-1, 0] = [f2(k) for k in x[:-1]]
 
-    if method == 'forward_euler':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
-    elif method == 'backward_euler':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                np.linalg.solve(np.eye(Nx - 1) - dt * A, U[:-1, k:(k + 1)])
-    elif method == 'trapezoidal':
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
-                                (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, k:(k + 1)])
-    elif method == 'midpoint':
-        # Use Trapezoidal as the first step
-        U[:-1, 1:2] = \
-            np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
-                            (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, 0:1])
-        for k in range(Nt - 2):
-            U[:-1, (k + 2):(k + 3)] = \
-                U[:-1, k:(k + 1)] + 2 * dt * A @ U[:-1, (k + 1):(k + 2)]
-    elif method == 'lax_friedrichs':
-        B = np.diag(np.ones(Nx - 2), 1) + np.diag(np.ones(Nx - 2), -1)
-        B[0, -1] = 1
-        B[-1, 0] = 1
-        B = 0.5 * B
-        for k in range(Nt - 1):
-            U[:-1, (k + 1):(k + 2)] = \
-                B @ U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
-
-    U[-1, :] = U[0, :]
-
-    nrows = 2
-    ncols = 4
-    fig2, ax2 = plt.subplots(nrows, ncols)
-    fig2.suptitle(f'{method}, dt = {dt}')
-    time = 0
-    for p in range(nrows):
-        for q in range(ncols):
-            if time <= tf:
-                ax2[p][q].plot(x, U[:, np.where(t == time)[0][0]])
-                ax2[p][q].set_title(f't = {time}')
-                time += 1
-
-    if show_plots:
-        fig2.show()
+    U = do_method(A, U, t, Nx, Nt, 1, method=method)
 
     return U, t
 
@@ -297,3 +266,59 @@ dt = 0.01
 U, t = solve_advection_eqn_2(dt, method='lax_friedrichs')
 A16 = U[np.where(np.isclose(x, np.pi))[0][0], np.where(t == 4)[0][0]]
 print(f'A16: {A16}')
+
+
+'''Problem 3
+u_t = -u_x
+0 < x < 25
+
+BCs:
+u(t, 0) = u(t, 25)
+
+IC:
+u(0, x) = f(x) = e^(-20 * (x - 2)^2) + e^(-(x - 5)^2)
+
+Solve using the method of lines.  dx = 0.05, dt = 1/22.  Solve for u(17, 19).
+
+a) Lax-Friedrichs
+b) Midpoint method
+'''
+c = 1
+dx = 0.05
+xi = 0
+xf = 25
+Nx = floor((xf - xi) / dx) + 1
+x = np.linspace(xi, xf, Nx)
+dt = 1 / 22
+ti = 0
+tf = 17
+Nt = floor((tf - ti)/ dt) + 1
+t = np.linspace(ti, tf, Nt)
+
+
+def f3(x):
+    return np.exp(-20 * (x - 2) ** 2) + np.exp(-1 * (x - 5) ** 2)
+
+
+def solve_advection_eqn_3(method='midpoint', submethod='trapezoidal'):
+    A = np.diag(np.ones(Nx - 2), 1) - np.diag(np.ones(Nx - 2), -1)
+    A[0, -1] = -1
+    A[-1, 0] = 1
+    A = (- c / (2 * dx)) * A
+
+    U = np.zeros((Nx, Nt))
+    U[:-1, 0] = [f3(k) for k in x[:-1]]
+
+    U = do_method(A, U, t, Nx, Nt, 2, method=method,
+                  submethod=submethod)
+
+    return U
+
+
+U = solve_advection_eqn_3(method='lax_friedrichs')
+A17 = U[np.where(x == 19)[0][0], np.where(t == 17)[0][0]]
+print(f'A17: {A17}')
+
+U = solve_advection_eqn_3(method='midpoint')
+A18 = U[np.where(x == 19)[0][0], np.where(t == 17)[0][0]]
+print(f'A18: {A18}')
