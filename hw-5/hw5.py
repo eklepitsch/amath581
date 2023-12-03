@@ -52,38 +52,105 @@ def true_solution1(t, x):
     return f1(x - c * t)
 
 
+def solve_advection_eqn_1(dt, method='forward_euler'):
+    Nt = floor((tf - ti) / dt) + 1
+    t = np.linspace(ti, tf, Nt)
+
+    A = np.diag(np.ones(Nx - 2), 1) - np.diag(np.ones(Nx - 2), -1)
+    A[0, -1] = -1
+    A[-1, 0] = 1
+    A = (- c / (2 * dx)) * A
+
+    U = np.zeros((Nx, Nt))
+    U[:-1, 0] = [f1(k) for k in x[:-1]]
+
+    if method == 'forward_euler':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
+    elif method == 'backward_euler':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                np.linalg.solve(np.eye(Nx - 1) - dt * A, U[:-1, k:(k + 1)])
+    elif method == 'trapezoidal':
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
+                                (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, k:(k + 1)])
+    elif method == 'midpoint':
+        # Use Trapezoidal as the first step
+        U[:-1, 1:2] = \
+            np.linalg.solve(np.eye(Nx - 1) - (dt / 2) * A,
+                            (np.eye(Nx - 1) + (dt / 2) * A) @ U[:-1, 0:1])
+        for k in range(Nt - 2):
+            U[:-1, (k + 2):(k + 3)] = \
+                U[:-1, k:(k + 1)] + 2 * dt * A @ U[:-1, (k + 1):(k + 2)]
+    elif method == 'lax_friedrichs':
+        B = np.diag(np.ones(Nx - 2), 1) + np.diag(np.ones(Nx - 2), -1)
+        B[0, -1] = 1
+        B[-1, 0] = 1
+        B = 0.5 * B
+        for k in range(Nt - 1):
+            U[:-1, (k + 1):(k + 2)] = \
+                B @ U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
+
+    U[-1, :] = U[0, :]
+
+    nrows = 2
+    ncols = 4
+    fig1, ax1 = plt.subplots(nrows, ncols)
+    fig1.suptitle(f'{method}, dt = {dt}')
+    time = 0
+    for p in range(nrows):
+        for q in range(ncols):
+            if time <= tf:
+                ax1[p][q].plot(x, U[:, np.where(t == time)[0][0]])
+                ax1[p][q].set_title(f't = {time}')
+                time += 0.5
+
+    if show_plots:
+        fig1.show()
+
+    return U, t
+
+
 dt = 0.1
-Nt = floor((tf - ti) / dt) + 1
-t = np.linspace(ti, tf, Nt)
-
-A = np.diag(np.ones(Nx - 2), 1) - np.diag(np.ones(Nx - 2), -1)
-A[0, -1] = -1
-A[-1, 0] = 1
-A = (- c / (2 * dx)) * A
-
-U = np.zeros((Nx, Nt))
-U[:-1, 0] = [f1(k) for k in x[:-1]]
-# print(x)
-# print([f1(k) for k in x])
-# print(U)
-
-# Forward Euler
-for k in range(Nt - 1):
-    U[:-1, (k + 1):(k + 2)] = U[:-1, k:(k + 1)] + dt * A @ U[:-1, k:(k + 1)]
-U[-1, :] = U[0, :]
-
-fig1, ax1 = plt.subplots(2, 4)
-fig2, ax2 = plt.subplots(2, 4)
-time = 0
-for p in range(2):
-    for q in range(4):
-        if time <= 3:
-            ax1[p][q].plot(x, U[:, np.where(t == time)[0][0]])
-            ax1[p][q].set_title(f't = {time}')
-            ax2[p][q].plot(x, )
-            time += 0.5
-fig1.show()
-fig2.show()
-
+U, t = solve_advection_eqn_1(dt, method='forward_euler')
 A1 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.01
+U, t = solve_advection_eqn_1(dt, method='forward_euler')
+A2 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.1
+U, t = solve_advection_eqn_1(dt, method='trapezoidal')
+A3 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.01
+U, t = solve_advection_eqn_1(dt, method='trapezoidal')
+A4 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.1
+U, t = solve_advection_eqn_1(dt, method='midpoint')
+A5 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.01
+U, t = solve_advection_eqn_1(dt, method='midpoint')
+A6 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.1
+U, t = solve_advection_eqn_1(dt, method='lax_friedrichs')
+A7 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
+dt = 0.01
+U, t = solve_advection_eqn_1(dt, method='lax_friedrichs')
+A8 = U[np.where(x == 9)[0][0], np.where(t == 3)[0][0]]
+
 print(f'A1: {A1}')
+print(f'A2: {A2}')
+print(f'A3: {A3}')
+print(f'A4: {A4}')
+print(f'A5: {A5}')
+print(f'A6: {A6}')
+print(f'A7: {A7}')
+print(f'A8: {A8}')
