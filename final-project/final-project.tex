@@ -1,0 +1,675 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{bm}
+\graphicspath{ {./images/} }
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{biblatex}
+\addbibresource{./sample.bib} %Import the bibliography file
+\geometry{
+ a4paper,
+ total={170mm,257mm},
+ left=20mm,
+ top=20mm,
+ }
+\title{AMATH 581, Final Project}
+\author{Evan Klepitsch}
+\date{\today}
+\begin{document}
+\maketitle
+\section{Overview}
+In this report I will implement the RK5 method proposed by Goeken and Johnson in [1]. I will attempt to reproduce their results by solving the same test problems as described in the journal article.  Additionally, I will solve the test problems using my own implementations of RK2 and RK4, and using scipy's solve\textunderscore ivp and compare the accuracy of the methods.
+
+\section{Test Problems}
+The following test problems will be referred to throughout this report.
+\subsection{Test Problem 1}
+This problem is taken from [1].
+\begin{equation} \label{eq:test_problem_1}
+\left\{
+\begin {aligned}
+& x' = -x \\
+& x(0) = 1
+\end{aligned}
+\right.
+\end{equation}
+Has true solution
+\begin{equation}
+x = e^{-t}
+\end{equation}
+\subsection{Test Problem 2}
+This problem is taken from [1].
+\begin{equation} \label{eq:test_problem_2}
+\left\{
+\begin {aligned}
+& x' = \frac{x}{4} - \frac{x^2}{80} \\
+& x(0) = 1
+\end{aligned}
+\right.
+\end{equation}
+Has true solution
+\begin{equation}
+x = \frac{20}{1 + 19e^{\frac{-t}{4}}}
+\end{equation}
+\subsection{Test Problem 3}
+This problem is taken from HW1, Problem 1.
+\begin{equation} \label{eq:test_problem_3}
+\left\{
+\begin {aligned}
+& x' = -4x\sin(t) \\
+& x(0) = 1
+\end{aligned}
+\right.
+\end{equation}
+Has true solution
+\begin{equation}
+x = e^{4(\cos(t) - 1)}
+\end{equation}
+\section{Methods}
+The following methods will be referred to throughout this report. Each method is designed to solve initial value problems of the form
+\begin{equation} \label{eq:IVP}
+\left\{
+\begin {aligned}
+& x' = f(t, x) \\
+& x(0) = x_0
+\end{aligned}
+\right.
+\end{equation}
+\subsection{RK2}
+\begin{equation} \label{RK2}
+x_{k+1} = x_k + \Delta t f(t_k + \frac{\Delta t}{2}, x_k + \frac{\Delta t}{2}f(t_k, x_k))
+\end{equation}
+\subsection{RK4}
+\begin{equation} \label{RK4}
+\begin{split}
+x_{k+1} = x_k + \frac{\Delta t}{6}(f_1 + 2f_2 + 2f_3 + f_4) \quad\quad \textrm{where} \quad\quad
+\end{split}
+\begin{split}
+& f_1 = f(t_k, x_k) \\
+& f_2 = f(t_k + \frac{\Delta t}{2}, x_k + \frac{\Delta t}{2}f_1) \\
+& f_3 = f(t_k + \frac{\Delta t}{2}, x_k + \frac{\Delta t}{2}f_2) \\
+& f_4 = f(t_k + \Delta t, x_k + \Delta t f_3)
+\end{split}
+\end{equation}
+\subsection{RK5}
+The following method is taken from [1].
+\begin{equation} \label{RK5}
+\begin{split}
+x_{k+1} = x_k + \frac{5}{48}k_1 + &\frac{27}{56}k_2 + \frac{125}{336}k_3 + \frac{1}{24}k_4 \quad\quad \textrm{where} \quad\quad \\
+\\
+& k_1 = \Delta t f(t_k, x_k) \\
+& k_2 = \Delta t f(t_k, x_k + \frac{1}{3}k_1 + \frac{1}{18}\Delta t f_x k_1) \\
+& k_3 = \Delta t f(t_k, x_k - \frac{152}{125}k_1 + \frac{252}{125}k_2 - \frac{44}{125}\Delta t f_x k_1) \\
+& k_4 = \Delta t f(t_k, x_k + \frac{19}{2}k_1 - \frac{72}{7}k_2 + \frac{25}{14}k_3 + \frac{5}{2}\Delta t f_x k_1)
+\end{split}
+\end{equation}
+In \ref{RK5}, the term $f_x$ may be calculated in one of three ways put forth by Goeken and Johnson in [1]. For autonomous equations, $f_x = \frac{f'}{f}$.
+\section{Reproduction of the results in [1]}
+I tried to validate my implementation of RK5 by solving test problems 1 and 2, using the same values of $\Delta t$ as described in [1].
+\subsection{Test problem 1}
+For test problem 1, I solved from $t = 0$ to $t = 20$.  My results are shown alongside the results from [1] in Figures \ref{fig:Goeken-results-test-problem-1} and \ref{fig:Reproduction-of-results-test-problem-1}.  My results are not as accurate as the results from [1].  At the smallest time step ($\Delta t = 0.032$), my error was on the order of $10^-7$ whereas the error from [1] is on the order of $10^-9$.  However, my implementation does appear to provide a reasonable approximation to the true solution, which is observed in Figure \ref{fig:Approximate-solutions-for-test-problem-1-using-RK5}.
+
+To detemine the order of accuracy of my own implementation, I examined the slope of the log-log plot of the global error vs $\Delta t$. The implementation is approximately 3rd-order, as shown in Figure \ref{fig:Global-error-for-test-problem-1-using-RK5}.  Note that Figures \ref{fig:Reproduction-of-results-test-problem-1} and \ref{fig:Global-error-for-test-problem-1-using-RK5} are nearly identical, but I changed the axis labeling in the former so that it can be compared more easily to the results in [1].
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Approximate-solutions-for-test-problem-1-using-RK5}
+	\caption{True solution vs. approximate solutions for test problem 1}
+	\label{fig:Approximate-solutions-for-test-problem-1-using-RK5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Goeken-results-test-problem-1}
+	\caption{Goeken and Johnson's results for test problem 1}
+	\label{fig:Goeken-results-test-problem-1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Reproduction-of-results-test-problem-1}
+	\caption{My results for test problem 1}
+	\label{fig:Reproduction-of-results-test-problem-1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Global-error-for-test-problem-1-using-RK5}
+	\caption{Order of accuracy for test problem 1}
+	\label{fig:Global-error-for-test-problem-1-using-RK5}
+\end{figure}
+
+\subsection{Test problem 2}
+For test problem 2, I solved from $t = 0$ to $t = 20$.  My results are shown alongside the results from [1] in Figures \ref{fig:Goeken-results-test-problem-2} and \ref{fig:Reproduction-of-results-test-problem-2}. Once again, my implementation is not as accurate as Goeken and Johnson's.  At a time step of $\Delta t = 0.032$, my implementation had an error on the order of $10^-8$, whereas their implementation had an error on the order of $10^-15$. My own implementation is approximately 3rd-order accurate on test problem 2, as shown in Figure \ref{fig:Global-error-for-test-problem-2-using-RK5}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Approximate-solutions-for-test-problem-2-using-RK5}
+	\caption{True solution vs. approximate solutions for test problem 2}
+	\label{fig:Approximate-solutions-for-test-problem-2-using-RK5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Goeken-results-test-problem-2}
+	\caption{Goeken and Johnson's results for test problem 2}
+	\label{fig:Goeken-results-test-problem-2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Reproduction-of-results-test-problem-2}
+	\caption{My results for test problem 2}
+	\label{fig:Reproduction-of-results-test-problem-2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Global-error-for-test-problem-2-using-RK5}
+	\caption{Order of accuracy for test problem 2}
+	\label{fig:Global-error-for-test-problem-2-using-RK5}
+\end{figure}
+
+\section{Test problem 3}
+To extend my investigation of the RK5 method, I also used it to solve test problem 3 (taken from homework 1).  This is a nonautonomous ODE due to the explicit dependence on $t$.  In their article, Goeken and Johnson refer to the fact that their method is intended for autonomous ODEs.  I was curious what would happen if I applied this method to a nonautonomous problem.
+
+I solved test problem 3 from $t = 0$ to $t = \pi$, using $\Delta t = 2^{-5}$, $\Delta t = 2^{-6}$, $\Delta t = 2^{-7}$, $\Delta t = 2^{-8}$, $\Delta t = 2^{-9}$, $\Delta t = 2^{-10}$, $\Delta t = 2^{-11}$, and $\Delta t = 2^{-12}$. Because the term $f_x$ is undefined at the first time step, I used Forward Euler for the first step and RK5 for the other time steps.  The results are plotted in Figures \ref{fig:Approximate-solutions-for-test-problem-3-using-RK5} and \ref{fig:Global-error-for-test-problem-3-using-RK5}.
+
+The method achieved and order of accuracy of 1.88 on this nonautonomous ODE.  This is worse than the order of 3 which was achieved on the other (autonomous) test problems, and significantly worse than the order of 5 which was achieved by Goeken and Johnson. For nonautonomous ODEs such as this one, RK2 would clearly be a better choice because it will achieve higher accuracy with less cost.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Approximate-solutions-for-test-problem-3-using-RK5}
+	\caption{True solution vs. approximate solutions for test problem 3}
+	\label{fig:Approximate-solutions-for-test-problem-3-using-RK5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1\textwidth]{Global-error-for-test-problem-3-using-RK5}
+	\caption{Order of accuracy for test problem 3}
+	\label{fig:Global-error-for-test-problem-3-using-RK5}
+\end{figure}
+
+\section{Comparison with other RK methods}
+Finally, I compared the accuracy of RK5 with my own implementations of RK2 and RK4, and also with scipy.integrate.solve\textunderscore ivp (using method='RK45'). The results are in Figures \ref{fig:Comparison-of-methods-test-problem-1} through \ref{fig:Comparison-of-methods-test-problem-3}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-1-using-large-dt}
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-1-using-small-dt}
+	\caption{Comparison of methods for test problem 1}
+	\label{fig:Comparison-of-methods-test-problem-1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-2-using-large-dt}
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-2-using-small-dt}
+	\caption{Comparison of methods for test problem 2}
+	\label{fig:Comparison-of-methods-test-problem-2}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-3-using-large-dt}
+	\includegraphics[width=0.45\textwidth]{Comparison-of-methods-test-problem-3-using-small-dt}
+	\caption{Comparison of methods for test problem 3}
+	\label{fig:Comparison-of-methods-test-problem-3}
+\end{figure}
+
+In each figure, the graph on the left side was generated using larger values of $\Delta t$, whereas the graph on the right side was generated using smaller values of $\Delta t$.  In Figure \ref{fig:Comparison-of-methods-test-problem-1}, it is clear that the RK2 and RK4 methods have 2nd and 4th order accuracy, as expected.  The RK5 method is not actually 5th order, which is in alignment with the results from Section 4.
+
+In Figure \ref{fig:Comparison-of-methods-test-problem-2}, the RK2 and RK4 methods have the advertised order of accuracy for the larger values of $\Delta t$.  As $\Delta t$ becomes smaller, the RK4 method no longer achieves 4th order accuracy, and instead drops to 2nd order.  Also on the right hand side, the slope of solve\textunderscore ivp is shown as "NaN".  For these small values of $\Delta t$, the scipy method is so accurate that the error is nearly zero, which causes a "NaN" error when taking the logarithm of the global error.
+
+In Figure \ref{fig:Comparison-of-methods-test-problem-3}, we again observe the RK2 and RK4 methods achieving their advertised orders of accuracy.  It is notable that in the graph on the left hand side the RK5 method achieves an order of 4.87, which is the closest of any of the tested scenarios to 5th-order accuracy.
+
+It is also interesting that in each case, scipy.solve\textunderscore ivp produces the smallest absolute error.  This means that scipy.solve\textunderscore ivp is more accurate than any of the methods which I implemented in this report.  While implementing the methods on my own was a fun educational exercise, using the scipy library is preferable in real scenarios to take advantage of the fine tuning which it provides.
+
+\section{Conclusion}
+In this report I implemented the RK5 method described in [1].  I found the method to be approximately 3rd-order accurate and was not able to exactly reproduce the results put forth in the journal article.  Reasons for the discrepancy could include:
+
+\begin{itemize}
+	\item A typo in my own code (there were a lot of coefficients that were manually typed and therefore prone to error).
+	\item  A difference in the calculation of the term $f_x$.  The authors described three possible methods for calculating $f_x$ but did not specify which one was used to produce their graphs.  It's also possible I misunderstood the meaning of this term.
+\end{itemize}
+
+Then I compared the accuracy of the RK2, RK4, RK5, and scipy's implementation of RK4 by using each method on each test problem and plotting the results.  It is very clear that scipy.solve\textunderscore ivp is the most accurate of all the methods tested for any value of $\Delta t$.
+
+\section{References}
+[1] David Goeken and Olin Johnson. Fifth-order Runge-Kutta with higher order derivative approximations. \textit{Electronic Journal of Differential Equations}, Conference 02, 1999, pp. 1-9. URL:  https://ejde.math.txstate.edu/conf-proc/02/g1/goeken.pdf
+
+\section{Code}
+I used Python to generate the figures in this report.  The code is given below.  It was tested using Python 3.12.0.
+
+\begin{verbatim}
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import scipy.integrate
+from collections import namedtuple
+from math import floor, ceil
+
+# Set to True to save the figures to .png files
+save_figures = False
+if save_figures:
+    # Bump up the resolution (adds processing time)
+    mpl.rcParams['figure.dpi'] = 900
+
+# Where to write the generated image files
+image_path = r'C:\amath581-images'
+
+
+'''Methods
+
+The following section of code contains functions for the various numerical
+methods examined in this report: rk2, rk4, and rk5.  There are two methods
+for rk5.  The first takes f_y as a parameter and can be used when f_y is
+known explicitly.  The second takes f' as a parameter and can be used
+if it is cheaper to evaluate f' than it is to evaluate f_y.
+'''
+def rk2(t0, tN, x0, dt, f):
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros_like(t)
+    x[0] = x0
+
+    for k in range(len(t) - 1):
+        x[k + 1] = (x[k] + dt *
+                    f(x[k] + (dt / 2) * f(x[k], t[k]), t[k] + (dt / 2)))
+
+    return t, x
+
+
+def rk4(t0, tN, x0, dt, f):
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros_like(t)
+    x[0] = x0
+
+    def f1(x, t):
+        return f(x, t)
+
+    def f2(x, t):
+        return f(x + (dt / 2) * f1(x, t), t + dt / 2)
+
+    def f3(x, t):
+        return f(x + (dt / 2) * f2(x, t), t + dt / 2)
+
+    def f4(x, t):
+        return f(x + dt * f3(x, t), t + dt)
+
+    for k in range(len(t) - 1):
+        x[k + 1] = x[k] + (dt / 6) * \
+                   (f1(x[k], t[k]) +
+                    2 * f2(x[k], t[k]) +
+                    2 * f3(x[k], t[k]) +
+                    f4(x[k], t[k]))
+
+    return t, x
+
+
+def rk5_method1(t0, tN, x0, dt, f, yn, first_step_fe=False):
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros_like(t)
+    x[0] = x0
+
+    def k1(x, t):
+        return dt * f(x, t)
+
+    def k2(x, t):
+        return dt * f(x + (1/3) * k1(x, t)
+                      + (1/18) * dt * yn(x, t) * k1(x, t), t)
+
+    def k3(x, t):
+        return dt * f(x - (152/125) * k1(x, t) + (252/125) * k2(x, t)
+                      - (44/125) * dt * yn(x, t) * k1(x, t), t)
+
+    def k4(x, t):
+        return dt * f(x + (19/2) * k1(x, t) - (72/7) * k2(x, t)
+                      + (25/14) * k3(x, t)
+                      + (5/2) * dt * yn(x, t) * k1(x, t), t)
+
+    start = 0
+    if first_step_fe:
+        # Use forward Euler for first time step
+        x[1] = x[0] + dt * f(x[0], t[0])
+        start = 1
+
+    # Use RK5 for remaining time steps
+    for k in range(start, len(t) - 1):
+        x[k + 1] = (x[k] + (5/48) * k1(x[k], t[k])
+                    + (27/56) * k2(x[k], t[k])
+                    + (125/336) * k3(x[k], t[k])
+                    + (1/24) * k4(x[k], t[k]))
+
+    return t, x
+
+
+def rk5_method2(t0, tN, x0, dt, f, f_prime, first_step_fe=False):
+    t = np.arange(t0, tN + dt / 2, dt)
+    x = np.zeros_like(t)
+    x[0] = x0
+
+    def k1(x, t):
+        return dt * f(x, t)
+
+    def k2(x, t):
+        return dt * f(x + (1/3) * k1(x, t)
+                      + (1/18) * dt ** 2 * f_prime(x, t) * k1(x, t), t)
+
+    def k3(x, t):
+        return dt * f(x - (152/125) * k1(x, t) + (252/125) * k2(x, t)
+                      - (44/125) * dt ** 2 * f_prime(x, t) * k1(x, t), t)
+
+    def k4(x, t):
+        return dt * f(x + (19/2) * k1(x, t) - (72/7) * k2(x, t)
+                      + (25/14) * k3(x, t)
+                      + (5/2) * dt ** 2 * f_prime(x, t) * k1(x, t), t)
+
+    start = 0
+    if first_step_fe:
+        # Use forward Euler for first time step
+        x[1] = x[0] + dt * f(x[0], t[0])
+        start = 1
+
+    # Use RK5 for remaining time steps
+    for k in range(start, len(t) - 1):
+        x[k + 1] = (x[k] + (5/48) * k1(x[k], t[k])
+                    + (27/56) * k2(x[k], t[k])
+                    + (125/336) * k3(x[k], t[k])
+                    + (1/24) * k4(x[k], t[k]))
+
+    return t, x
+
+
+def scipy_solve_ivp(t0, tN, x0, dt, f):
+    def f_flip_args(t, y):
+        return f(y, t)
+
+    t = np.arange(t0, tN + dt / 2, dt)
+
+    # Handle edge case when the last t value is outside of the t_span
+    if t[-1] > tN:
+        t = t[:-1]
+
+    sol = scipy.integrate.solve_ivp(f_flip_args, [t0, tN], [x0], method='RK45',
+                                    t_eval=t, max_step=dt)
+
+    return t, sol.y.flatten()
+
+
+'''Helper functions
+
+The following section of code contains functions that I use frequently for
+doing simple tasks like plotting, etc.
+'''
+def ge(t, true_solution, approx_solution):
+    """Global error"""
+    return abs(true_solution(t[-1]) - approx_solution[-1])
+
+
+def float_formatter(x):
+    """
+    Specify the precision and notation (positional vs. scientific)
+    for floating point values.
+    """
+    p = 6
+    if abs(x) < 1e-4 or abs(x) > 1e4:
+        return np.format_float_scientific(x, precision=p)
+    else:
+        return np.format_float_positional(x, precision=p)
+
+
+np.set_printoptions(formatter={'float': float_formatter})
+
+
+'''IVP 1
+
+y' = -y
+y(0) = 1
+
+True solution: y(t) = e^-t
+'''
+def f1(y, t):
+    return -1 * y
+
+
+def f1_prime(y, t):
+    return -1
+
+
+def yn1(y, t):
+    return 1 / y
+
+
+def true_solution1(t):
+    return np.exp(-1 * t)
+
+
+'''IVP 2
+
+y' = (1/4)y - (1/80)y^2
+y(0) = 1
+
+True solution: y(t) = 20 / (1 + 19e^(-t/4))
+'''
+def f2(y, t):
+    return (1 / 4) * y - (1 / 80) * y ** 2
+
+
+def f2_prime(y, t):
+    return (1 / 4) - (1 / 40) * y
+
+
+def yn2(y, t):
+    return f2_prime(y, t) / f2(y, t)
+
+
+def true_solution2(t):
+    return 20 / (1 + 19 * np.exp((-1/4) * t))
+
+
+'''IVP 3 (adapted from HW1, Problem 1)
+
+x'(t) = -4 * x * sin(t)
+x(0) = 1
+t0 = 0, tN = pi - dt
+'''
+def f3(x, t):
+    return -4 * x * np.sin(t)
+
+
+def f3_prime(x, t):
+    return -4 * x * np.cos(t)
+
+
+def xn3(x, t):
+    return 1/np.tan(t)
+
+
+def true_solution3(t):
+    return np.exp(4 * (np.cos(t) - 1))
+
+
+'''Analysis
+
+The following section of code uses the various numerical methods and does
+some analysis of the results.
+'''
+# Define some namedtuples for convenience
+DeltaT = namedtuple('DeltaT', 'decimal str')
+
+# Comment this in for large delta t values
+# delta_t = [DeltaT(0.032, r'0.032'),
+#            DeltaT(0.064, r'0.064'),
+#            DeltaT(0.128, r'0.128'),
+#            DeltaT(0.256, r'0.256'),
+#            DeltaT(0.512, r'0.512'),
+#            DeltaT(1.024, r'1.024')]
+
+# Comment this in for small delta t values
+delta_t = [DeltaT(pow(2, -5), r'$2^{-5}$'),
+           DeltaT(pow(2, -6), r'$2^{-6}$'),
+           DeltaT(pow(2, -7), r'$2^{-7}$'),
+           DeltaT(pow(2, -8), r'$2^{-8}$'),
+           DeltaT(pow(2, -9), r'$2^{-9}$'),
+           DeltaT(pow(2, -10), r'$2^{-10}$'),
+           DeltaT(pow(2, -11), r'$2^{-11}$'),
+           DeltaT(pow(2, -12), r'$2^{-12}$')]
+
+
+Method = namedtuple('Method', 'name fn')
+
+# Define the methods to use
+methods = [Method('RK2', rk2),
+           Method('RK4', rk4),
+           Method('RK5', rk5_method1),
+           Method('scipy.solve_ivp', scipy_solve_ivp)]
+           #Method('RK5 method 2', rk5_method2)]  # Not used in the final report
+
+Problem = namedtuple('Problem',
+                     'name f f_prime yn true_soln t0 tN y0 first_step_fe')
+
+# Define the problems to solve
+problems = [Problem('test problem 1', f1, f1_prime, yn1, true_solution1, 0, 20, 1, False),
+            Problem('test problem 2', f2, f2_prime, yn2, true_solution2, 0, 20, 1, False),
+            Problem('Test problem 3', f3, f3_prime, xn3, true_solution3, 0, np.pi, 1, True)]
+
+for problem in problems:
+    # Fig3 is the log-log plot of the errors for each method overlayed in
+    # a single graph.
+    fig3, ax3 = plt.subplots(nrows=1, ncols=1)
+    fig3.suptitle(f'Global error for {problem.name} - comparison of methods'
+                  f'\n$\Delta t$ = [2^-5, 2^-6, ..., 2^-12]')
+    ax3.set_xlabel(r'$ln(\Delta t)$')
+    ax3.set_ylabel(r'$ln(E_N)$')
+
+    for method in methods:
+        # Fig1 is the plot of the true solution vs. the approximation
+        fig1, ax1 = plt.subplots(gridspec_kw={'left': 0.15})
+        ax1.set_title(f'Approximate solutions for {problem.name}'
+                      f' using {method.name}')
+        ax1.set_xlabel('time')
+        ax1.set_ylabel('x(t)')
+
+        # Fig2 is the plot of the global error vs. delta t
+        fig2, ax2 = plt.subplots(nrows=1, ncols=2, width_ratios=[5, 3],
+                                 gridspec_kw={
+                                     'left': 0.08,  # Left padding
+                                     'right': 0.96,  # Right padding
+                                     'wspace': 0.05})  # Space between axes
+        fig2.suptitle(f'Global error for {problem.name} using {method.name}')
+        fig2.set_figwidth(fig2.get_figwidth() * 1.5)  # Increase the width
+
+        # Column 0 = delta t, Column 1 = global error
+        global_err = np.zeros((len(delta_t), 2))
+
+        # For each delta t, approximate the solution using the given method
+        t_cache = None
+        s_cache = None
+        for i, dt in enumerate(delta_t):
+            if (method.name == 'RK2' or method.name == 'RK4'
+                    or method.name == 'scipy.solve_ivp'):
+                t, approx = method.fn(problem.t0, problem.tN, problem.y0,
+                                      dt.decimal, problem.f)
+            elif method.name == 'RK5':
+                t, approx = method.fn(problem.t0, problem.tN, problem.y0,
+                                      dt.decimal, problem.f, problem.yn,
+                                      problem.first_step_fe)
+            elif method.name == 'RK5 method 2':
+                t, approx = method.fn(problem.t0, problem.tN, problem.y0,
+                                      dt.decimal, problem.f, problem.f_prime,
+                                      problem.first_step_fe)
+
+            # Record delta t and global error (for plotting later)
+            global_err[i][0] = dt.decimal
+            global_err[i][1] = ge(t, problem.true_soln, approx)
+
+            max_time = 1
+            max_point = ceil(max_time / dt.decimal)
+            ax1.plot(t[:max_point], approx[:max_point],
+                     label=fr'$\Delta$t = {dt.str}')
+            if i == 0:
+                t_cache = t[:max_point]
+                s_cache = problem.true_soln(t[:max_point])
+
+            # Plot true solution on last iteration
+            if i == len(delta_t) - 1:
+                ax1.plot(t_cache, s_cache,
+                         label='true solution', linestyle=':', linewidth=4)
+
+            ax1.ticklabel_format(useOffset=False)
+
+        # Take the natural logarithm of delta t and the global error
+        dt = global_err[:, 0]
+        en = global_err[:, 1]
+        log_dt = np.log(dt)
+        log_en = np.log(en)
+
+        # Find the best fit line through ln(En)
+        [m, b] = np.polyfit(log_dt, log_en, 1)
+        best_fit_fn = np.poly1d([m, b])
+        best_fit_data = best_fit_fn(log_dt)
+
+        # Plot global error
+        ax2[0].set_xlabel(r'$ln(\Delta t)$')
+        ax2[0].set_ylabel(r'$ln(E_N)$')
+
+        # Use this code for generating plots with the same x and y axis
+        # ticks as the journal article.
+        #ax2[0].set_xlabel(r'Step Size')
+        #ax2[0].set_ylabel(r'Relative Error at t=20')
+        #ax2[0].set_xscale('log')
+        #ax2[0].set_xticks(dt)
+        #ax2[0].set_yscale('log')
+        #ax2[0].set_yticks([1e-10, 1e-08, 1e-06, 1e-04, 1e-02, 1e00])
+        #ax2[0].get_xaxis().set_major_formatter(
+        #    mpl.ticker.FuncFormatter(lambda x, p: format(float(x), ','))
+        #)
+
+        ax2[0].plot(log_dt, log_en, label='Actual error',
+                    marker='o', markersize=6, linestyle='')
+        ax2[0].plot(log_dt, best_fit_data, label='Best fit')
+        ax3.plot(log_dt, best_fit_data,
+                 label=f'{method.name}, slope = {round(m, 5)}')
+        ax2[0].text(np.mean(log_dt),
+                    np.mean(best_fit_data) - np.ptp(best_fit_data) / 3,
+                    f'Slope of best fit = {round(m, 5)}')
+
+        # Plot a table containing the En and ln(En) values
+        table_values = []
+        for dt, err, log_err in zip(delta_t, global_err[:, 1], log_en):
+            table_values.append([dt.str,
+                                 float_formatter(err),
+                                 float_formatter(log_err)])
+        table = plt.table(cellText=table_values,
+                          colLabels=[r'$\Delta$t', r'$E_N$', r'ln($E_N$)'],
+                          bbox=[0, 0, 1, 1])
+        ax2[1].add_table(table)
+        ax2[1].axis('off')
+
+        # Add legends to the plots
+        ax1.legend()
+        ax2[0].legend()
+        ax3.legend()
+
+        if save_figures:
+            img_path = os.path.join(image_path, f'Approximate-solutions-'
+                                                f'for-{problem.name}-using'
+                                                f'-{method.name}')
+            fig1.savefig(img_path)
+            img_path = os.path.join(image_path, f'Global-error-for-'
+                                                f'{problem.name}-using-'
+                                                f'{method.name}')
+            fig2.savefig(img_path)
+            img_path = os.path.join(image_path, f'Comparison-of-methods-'
+                                                f'{problem.name}-using-'
+                                                f'small-dt')
+            fig3.savefig(img_path)
+
+plt.show()
+
+\end{verbatim}
+
+\end{document}
